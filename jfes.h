@@ -11,6 +11,9 @@
 /** Strict JSON mode. **/
 //#define JFES_STRICT
 
+/** Maximal tokens count */
+#define JFES_MAX_TOKENS_COUNT   8192
+
 /** NULL define for the jfes library. */
 #ifndef JFES_NULL
 #define JFES_NULL               ((void*)0)
@@ -29,6 +32,7 @@ typedef enum jfes_status {
     jfes_no_memory          = 0x03,             /**< Not enough tokens were provided. */
     jfes_invalid_input      = 0x04,             /**< Invalid character in JSON string. */
     jfes_error_part         = 0x05,             /**< The string is not a full JSON packet. More bytes expected. */
+    jfes_unknown_type       = 0x06,             /**< Unknown token type. */
 } jfes_status_t;
 
 /** Memory allocator function type. */
@@ -52,8 +56,8 @@ typedef enum jfes_token_type {
     jfes_double             = 0x03,             /**< Double token type. */
     jfes_string             = 0x04,             /**< String token type. */
 
-    jfes_object             = 0x05,             /**< Object token type. */
-    jfes_array              = 0x06              /**< Array token type. */
+    jfes_array              = 0x05,             /**< Array token type. */
+    jfes_object             = 0x06              /**< Object token type. */
 } jfes_token_type_t;
 
 /** Json value type is the same as token type. */
@@ -68,14 +72,31 @@ typedef struct jfes_token {
     jfes_size_t             size;               /**< Token children count. */
 } jfes_token_t;
 
+/** JFES config structure. */
+typedef struct jfes_config {
+    jfes_malloc_t           jfes_malloc;        /**< Memory allocation function. */
+    jfes_free_t             jfes_free;          /**< Memory deallocation function. */
+} jfes_config_t;
+
+/** JFES tokens data structure. */
+typedef struct jfes_tokens_data {
+    jfes_config_t           *config;            /**< JFES configuration. */
+
+    const char              *json_data;         /**< JSON string. */
+    jfes_size_t             json_data_length;   /**< JSON string length. */
+
+    jfes_token_t            *tokens;            /**< String parsing result in tokens. */
+    jfes_size_t             tokens_count;       /**< Tokens count. */
+    jfes_size_t             current_token;      /**< Index of current token. */
+} jfes_tokens_data_t;
+
 /** JFES parser structure. */
 typedef struct jfes_parser {
     jfes_size_t             pos;                /**< Current offset in json string. */ 
     jfes_size_t             next_token;         /**< Next token to allocate. */
     int                     superior_token;     /**< Superior token node. */
 
-    jfes_malloc_t           jfes_malloc;        /**< Memory allocation function. */
-    jfes_free_t             jfes_free;          /**< Memory deallocation function. */
+    jfes_config_t           *config;            /**< Pointer to jfes config. */
 } jfes_parser_t;
 
 /** JSON value structure. */
@@ -89,13 +110,13 @@ typedef struct jfes_object_map {
 
 /** JSON array structure. */
 typedef struct jfes_array {
-    jfes_value_t            *items;             /**< JSON items in array. */    
+    jfes_value_t            **items;            /**< JSON items in array. */    
     jfes_size_t             count;              /**< Items count in array. */
 } jfes_array_t;
 
 /** JSON object structure. */
 typedef struct jfes_object {
-    jfes_object_map_t       *items;             /**< JSON items in object. */
+    jfes_object_map_t       **items;            /**< JSON items in object. */
     jfes_size_t             count;              /**< Items count in object. */
 } jfes_object_t;
 
@@ -138,12 +159,11 @@ int jfes_status_is_bad(jfes_status_t status);
     JFES parser initialization.
 
     \param[out]     parser              Pointer to the jfes_parser_t object.
-    \param[in]      malloc              Memory allocation function.
-    \param[in]      free                Memory deallocation function.
+    \param[in]      config              JFES configuration.
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_init_parser(jfes_parser_t *parser, jfes_malloc_t malloc, jfes_free_t free);
+jfes_status_t jfes_init_parser(jfes_parser_t *parser, jfes_config_t *config);
 
 /**
     Resets all parser fields, except memory allocation functions.
@@ -173,14 +193,24 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
 /**
     Run JSON parser and fills jfes_value_t object.
 
-    \param[in]      parser              Pointer to the jfes_parser_t object.
+    \param[in]      config              JFES configuration.
     \param[in]      json                JSON data string.
     \param[in]      length              JSON data length.
     \param[out]     value               Output value;
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_parse_data(jfes_parser_t *parser, const char *json,
+jfes_status_t jfes_parse_data(jfes_config_t *config, const char *json,
     jfes_size_t length, jfes_value_t *value);
+
+/**
+    Free all resources, captured by object.
+
+    \param[in]      config              JFES configuration.
+    \param[in,out]  value               Object to free.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value);
 
 #endif

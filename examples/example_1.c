@@ -25,7 +25,11 @@ int example_1_entry(int argc, char **argv) {
     jfes_token_t tokens[1024];
     jfes_size_t tokens_count = 1024;
 
-    jfes_init_parser(&parser, malloc, free);
+    jfes_config_t config;
+    config.jfes_malloc = malloc;
+    config.jfes_free = free;
+
+    jfes_init_parser(&parser, &config);
     jfes_status_t status = jfes_parse_tokens(&parser, json_data, buffer_size, tokens, &tokens_count);
 
     free(json_data);

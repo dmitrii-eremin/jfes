@@ -48,6 +48,26 @@ static const void *jfes_memcpy(const void *dst, const void *src, jfes_size_t cou
     return dst;
 }
 
+/** 
+    Allocates jfes_string.
+
+    \param[in]      config              JFES configuration.
+    \param[out]     str                 String to be allocated.
+    \param[in]      size                Size to allocate.
+
+    \return         jfes_success if everything is OK.
+*/
+static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *str, jfes_size_t size) {
+    if (!config || !str || size == 0) {
+        return jfes_invalid_arguments;
+    }
+
+    str->size = size;
+    str->data = config->jfes_malloc(str->size);
+
+    return jfes_success;
+}
+
 /**
     Finds length of the null-terminated string.
 
@@ -328,13 +348,12 @@ int jfes_status_is_bad(jfes_status_t status) {
     return !jfes_status_is_good(status);
 }
 
-jfes_status_t jfes_init_parser(jfes_parser_t *parser, jfes_malloc_t malloc, jfes_free_t free) {
-    if (!parser || !malloc || !free) {
+jfes_status_t jfes_init_parser(jfes_parser_t *parser, jfes_config_t *config) {
+    if (!parser || !config) {
         return jfes_invalid_arguments;
     }
 
-    parser->jfes_malloc = malloc;
-    parser->jfes_free = free;
+    parser->config = config;
 
     return jfes_reset_parser(parser);
 }
@@ -357,6 +376,8 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
     if (!parser || !json || length == 0 || !tokens || !max_tokens_count || *max_tokens_count == 0) {
         return jfes_invalid_arguments;
     }
+
+    jfes_reset_parser(parser);
 
     jfes_token_t *token = JFES_NULL;
 
@@ -492,10 +513,194 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
     return jfes_success;
 }
 
-jfes_status_t jfes_parse_data(jfes_parser_t *parser, const char *json,
-    jfes_size_t length, jfes_value_t *value) {
-    if (!parser || !json || length == 0 || !value) {
+/**
+    Creates jfes value node from tokens sequence.
+
+    \param[in]      tokens_data         Pointer to the jfes_tokens_data_t object.
+    \param[out]     value               Pointer to the value to create node.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *value) {
+    if (!tokens_data || !value) {
         return jfes_invalid_arguments;
+    }
+
+    if (tokens_data->current_token >= tokens_data->tokens_count) {
+        return jfes_invalid_arguments;
+    }
+
+    jfes_malloc_t jfes_malloc   = tokens_data->config->jfes_malloc;
+    jfes_free_t   jfes_free     = tokens_data->config->jfes_free;
+
+    jfes_token_t *token = &tokens_data->tokens[tokens_data->current_token];
+    tokens_data->current_token++;
+    
+    value->type = (jfes_value_type_t)token->type;
+
+    switch (token->type) {
+    case jfes_boolean:
+        break;
+
+    case jfes_integer:
+        break;
+
+    case jfes_double:
+        return jfes_invalid_arguments;
+        break;
+
+    case jfes_string:
+        break;
+
+    case jfes_array:
+        value->data.array_val = jfes_malloc(sizeof(jfes_array_t));
+        if (token->size > 0) {
+            value->data.array_val->count = token->size;
+            value->data.array_val->items = jfes_malloc(token->size * sizeof(jfes_value_t*));
+
+            jfes_status_t status = jfes_success;
+
+            for (jfes_size_t i = 0; i < token->size; i++) {
+                jfes_value_t *item = jfes_malloc(sizeof(jfes_value_t));
+                value->data.array_val->items[i] = item;
+
+                status = jfes_create_node(tokens_data, item);
+                if (jfes_status_is_bad(status)) {
+                    value->data.array_val->count = i + 1;
+
+                    jfes_free_value(tokens_data->config, value);
+                    return status;
+                }
+            }
+        }
+        break;
+
+    case jfes_object:
+        value->data.object_val = jfes_malloc(sizeof(jfes_object_t));
+        if (token->size > 0) {
+            value->data.object_val->count = token->size;
+            value->data.object_val->items = jfes_malloc(token->size * sizeof(jfes_object_map_t*));
+
+            jfes_status_t status = jfes_success;
+
+            for (jfes_size_t i = 0; i < token->size; i++) {
+                jfes_object_map_t *item = jfes_malloc(sizeof(jfes_object_map_t));
+                value->data.object_val->items[i] = item;
+
+                jfes_token_t *key_token = &tokens_data->tokens[tokens_data->current_token++];
+                
+                jfes_size_t key_length = key_token->end - key_token->start;
+                jfes_allocate_string(tokens_data->config, &item->key, key_length + 1);
+                jfes_memcpy(item->key.data, tokens_data->json_data + key_token->start, key_length);
+                item->key.data[key_length] = '\0';
+
+                item->value = jfes_malloc(sizeof(jfes_value_t));
+
+                status = jfes_create_node(tokens_data, item->value);
+                if (jfes_status_is_bad(status)) {
+                    value->data.object_val->count = i + 1;
+
+                    jfes_free_value(tokens_data->config, value);
+                    return status;
+                }
+            }
+        }
+        break;
+
+    default:
+        return jfes_unknown_type;
+    }
+    return jfes_success;
+}
+
+jfes_status_t jfes_parse_data(jfes_config_t *config, const char *json,
+    jfes_size_t length, jfes_value_t *value) {
+    if (!config || !json || length == 0 || !value) {
+        return jfes_invalid_arguments;
+    }
+
+    jfes_parser_t parser;
+    jfes_status_t status = jfes_init_parser(&parser, config);
+    if (jfes_status_is_bad(status)) {
+        return status;
+    }
+
+    jfes_size_t tokens_count = 1024;
+    jfes_token_t *tokens = JFES_NULL;
+
+    status = jfes_no_memory;
+    while (status == jfes_no_memory && tokens_count <= JFES_MAX_TOKENS_COUNT) {
+        jfes_reset_parser(&parser);
+
+        tokens = parser.config->jfes_malloc(tokens_count * sizeof(jfes_token_t));
+
+        long current_tokens_count = tokens_count;
+        status = jfes_parse_tokens(&parser, json, length, tokens, &current_tokens_count);
+        if (jfes_status_is_good(status)) {
+            tokens_count = current_tokens_count;
+            break;
+        }
+
+        tokens_count *= 2;
+        parser.config->jfes_free(tokens);
+    }
+    
+    if (jfes_status_is_bad(status)) {
+        return status;
+    }
+
+    jfes_tokens_data_t tokens_data = {
+        config,
+        json, length,
+        tokens, tokens_count, 0
+    };
+
+    status = jfes_create_node(&tokens_data, value);
+
+    parser.config->jfes_free(tokens);
+    return jfes_success;
+}
+
+jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
+    if (!config || !value) {
+        return jfes_invalid_arguments;
+    }
+
+    if (value->type == jfes_array) {
+        if (value->data.array_val->count > 0) {
+            for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
+                jfes_value_t *item = value->data.array_val->items[i];
+                jfes_free_value(config, item);
+                config->jfes_free(item);
+            }
+
+            config->jfes_free(value->data.array_val->items);
+        }
+
+        config->jfes_free(value->data.array_val);
+    }
+    else if (value->type == jfes_object) {
+        if (value->data.object_val->count > 0) {
+            for (jfes_size_t i = 0; i < value->data.object_val->count; i++) {
+                jfes_object_map_t *object_map = value->data.object_val->items[i];
+
+                config->jfes_free(object_map->key.data);
+
+                jfes_free_value(config, object_map->value);
+                config->jfes_free(object_map->value);
+
+                config->jfes_free(object_map);
+            }
+
+            config->jfes_free(value->data.object_val->items);
+        }
+
+        config->jfes_free(value->data.object_val);
+    }
+    else if (value->type == jfes_string) {
+        if (value->data.string_val.size > 0) {
+            config->jfes_free(value->data.string_val.data);
+        }
     }
 
     return jfes_success;

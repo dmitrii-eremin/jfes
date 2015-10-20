@@ -13,7 +13,7 @@
 
 /** Entry point. */
 int main(int argc, char **argv) {
-    return example_1_entry(argc, argv);
+    return example_2_entry(argc, argv);
 }
 
 int get_file_content(const char *filename, char *content, long *max_content_size) {
@@ -37,6 +37,8 @@ int get_file_content(const char *filename, char *content, long *max_content_size
 
     fread(content, read_size, sizeof(char), f);
     fclose(f);
+
+    *max_content_size = read_size;
 
     return 1;
 }
