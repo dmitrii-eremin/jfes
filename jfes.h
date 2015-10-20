@@ -37,6 +37,12 @@ typedef void *(__cdecl *jfes_malloc_t)(jfes_size_t);
 /** Memory deallocator function type. */
 typedef void (__cdecl *jfes_free_t)(void*);
 
+/** JFES string type. */
+typedef struct jfes_string {
+    char            *data;                      /**< String bytes. */
+    jfes_size_t     size;                       /**< Allocated bytes count. */
+} jfes_string_t;
+
 /** JFES token types */
 typedef enum jfes_token_type {
     jfes_undefined          = 0x00,             /**< Undefined token type. */
@@ -49,6 +55,9 @@ typedef enum jfes_token_type {
     jfes_object             = 0x05,             /**< Object token type. */
     jfes_array              = 0x06              /**< Array token type. */
 } jfes_token_type_t;
+
+/** Json value type is the same as token type. */
+typedef jfes_token_type_t jfes_value_type_t;
 
 /** JFES token structure. */
 typedef struct jfes_token {
@@ -68,6 +77,44 @@ typedef struct jfes_parser {
     jfes_malloc_t           jfes_malloc;        /**< Memory allocation function. */
     jfes_free_t             jfes_free;          /**< Memory deallocation function. */
 } jfes_parser_t;
+
+/** JSON value structure. */
+typedef struct jfes_value jfes_value_t;
+
+/** JFES `key -> value` mapping structure. */
+typedef struct jfes_object_map {
+    jfes_string_t           key;                /**< Object key. */
+    jfes_value_t            *value;             /**< Oject value. */
+} jfes_object_map_t;
+
+/** JSON array structure. */
+typedef struct jfes_array {
+    jfes_value_t            *items;             /**< JSON items in array. */    
+    jfes_size_t             count;              /**< Items count in array. */
+} jfes_array_t;
+
+/** JSON object structure. */
+typedef struct jfes_object {
+    jfes_object_map_t       *items;             /**< JSON items in object. */
+    jfes_size_t             count;              /**< Items count in object. */
+} jfes_object_t;
+
+/** JFES value data union. */
+typedef union jfes_value_data {
+    int                     bool_val;           /**< Boolean JSON value. */
+
+    int                     int_val;            /**< Integer JSON value. */
+    double                  double_val;         /**< Double JSON value. */
+    jfes_string_t           string_val;         /**< String JSON value. */
+
+    jfes_array_t            *array_val;         /**< Array JSON value. */
+    jfes_object_t           *object_val;        /**< Object JSON value. */
+} jfes_value_data_t;
+
+struct jfes_value {
+    jfes_value_type_t       type;               /**< JSON value type. */
+    jfes_value_data_t       data;               /**< Value data. */
+};
 
 /** 
     JFES status analizer function.
@@ -122,5 +169,18 @@ jfes_status_t jfes_reset_parser(jfes_parser_t *parser);
 */
 jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json, 
     jfes_size_t length, jfes_token_t *tokens, jfes_size_t *max_tokens_count);
+
+/**
+    Run JSON parser and fills jfes_value_t object.
+
+    \param[in]      parser              Pointer to the jfes_parser_t object.
+    \param[in]      json                JSON data string.
+    \param[in]      length              JSON data length.
+    \param[out]     value               Output value;
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_parse_data(jfes_parser_t *parser, const char *json,
+    jfes_size_t length, jfes_value_t *value);
 
 #endif

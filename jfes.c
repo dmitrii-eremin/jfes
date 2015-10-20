@@ -491,3 +491,12 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
     *max_tokens_count = count;
     return jfes_success;
 }
+
+jfes_status_t jfes_parse_data(jfes_parser_t *parser, const char *json,
+    jfes_size_t length, jfes_value_t *value) {
+    if (!parser || !json || length == 0 || !value) {
+        return jfes_invalid_arguments;
+    }
+
+    return jfes_success;
+}
