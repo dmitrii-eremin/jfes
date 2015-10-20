@@ -8,6 +8,9 @@
 #ifndef JFES_H_INCLUDE_GUARD
 #define JFES_H_INCLUDE_GUARD
 
+/** Strict JSON mode. **/
+//#define JFES_STRICT
+
 /** NULL define for the jfes library. */
 #ifndef JFES_NULL
 #define JFES_NULL               ((void*)0)
