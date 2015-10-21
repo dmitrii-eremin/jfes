@@ -69,6 +69,32 @@ static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *
 }
 
 /**
+    Creates string object.
+
+    \param[in]      config              JFES configuration.
+    \param[out]     str                 String to be created.
+    \param[in]      string              Initial string value.
+    \param[in]      size                Initial string length.
+
+    \return         jfes_success if everything is OK.
+*/
+static jfes_status_t jfes_create_string(jfes_config_t *config, jfes_string_t *str, const char *string, jfes_size_t size) {
+    if (!config || !str || !string || size == 0) {
+        return jfes_invalid_arguments;
+    }
+
+    jfes_status_t status = jfes_allocate_string(config, str, size + 1);
+    if (jfes_status_is_bad(status)) {
+        return status;
+    }
+
+    jfes_memcpy(str->data, string, size);
+    str->data[size] = '\0';
+
+    return jfes_success;
+}
+
+/**
     Finds length of the null-terminated string.
 
     \param[in]      data                Null-terminated string.
@@ -84,6 +110,23 @@ static jfes_size_t jfes_strlen(const char *data) {
     while (*p++);
 
     return (jfes_size_t)(p - data);
+}
+
+/**
+    Analyzes input string on the subject of whether it is an boolean.
+
+    \param[in]      data                Input string.
+    \param[in]      length              Length if the input string.
+
+    \return         Zero, if input string not an boolean. Otherwise anything.
+*/
+static int jfes_is_boolean(const char *data, jfes_size_t length) {
+    if (!data || length < 4) {
+        return 0;
+    }
+
+    return  jfes_memcmp(data, "true", 4) == 0 ||
+            jfes_memcmp(data, "false", 5) == 0;
 }
 
 /**
@@ -155,6 +198,26 @@ static int jfes_is_double(const char *data, jfes_size_t length) {
 }
 
 /**
+    Analyzes string and returns its boolean value.
+
+    \param[in]      data                String to analysis.
+    \param[in]      length              String length.
+
+    \return         1, if data == 'true'. Otherwise 0.
+*/
+static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
+    if (!data || length < 4) {
+        return 0;
+    }
+
+    if (jfes_memcmp(data, "true", 4) == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+/**
     Allocates a fresh unused token from the token pool.
 
     \param[in, out] parser              Pointer to the jfes_parser_t object.
@@ -189,8 +252,7 @@ static jfes_token_type_t jfes_get_token_type(const char *data, jfes_size_t lengt
     }
 
     jfes_token_type_t type = jfes_undefined;
-    if ((length == 4 && jfes_memcmp(data, "true", 4) == 0) ||
-        (length == 5 && jfes_memcmp(data, "false", 5) == 0)) {
+    if (jfes_is_boolean(data, length)) {
         return jfes_boolean;
     }
     else if (jfes_is_integer(data, length)) {
@@ -540,6 +602,8 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
 
     switch (token->type) {
     case jfes_boolean:
+        value->data.bool_val = jfes_string_to_boolean(tokens_data->json_data + token->start, 
+            token->end - token->start);
         break;
 
     case jfes_integer:
@@ -550,6 +614,8 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
         break;
 
     case jfes_string:
+        jfes_create_string(tokens_data->config, &value->data.string_val, 
+            tokens_data->json_data + token->start, token->end - token->start);
         break;
 
     case jfes_array:
@@ -590,9 +656,9 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
                 jfes_token_t *key_token = &tokens_data->tokens[tokens_data->current_token++];
                 
                 jfes_size_t key_length = key_token->end - key_token->start;
-                jfes_allocate_string(tokens_data->config, &item->key, key_length + 1);
-                jfes_memcpy(item->key.data, tokens_data->json_data + key_token->start, key_length);
-                item->key.data[key_length] = '\0';
+
+                jfes_create_string(tokens_data->config, &item->key, 
+                    tokens_data->json_data + key_token->start, key_length);
 
                 item->value = jfes_malloc(sizeof(jfes_value_t));
 
@@ -613,7 +679,7 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
     return jfes_success;
 }
 
-jfes_status_t jfes_parse_data(jfes_config_t *config, const char *json,
+jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     jfes_size_t length, jfes_value_t *value) {
     if (!config || !json || length == 0 || !value) {
         return jfes_invalid_arguments;

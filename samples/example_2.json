@@ -1,1 +1,7 @@
-{ "first_name": "John", "last_name": "Black" }
+{
+    "admin": true, 
+    "first_name": "John", 
+    "last_name": "Black", 
+    "age": 35,
+    "coeff": 0.443E+2
+}

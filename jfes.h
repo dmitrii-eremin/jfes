@@ -99,6 +99,7 @@ typedef struct jfes_parser {
     jfes_config_t           *config;            /**< Pointer to jfes config. */
 } jfes_parser_t;
 
+
 /** JSON value structure. */
 typedef struct jfes_value jfes_value_t;
 
@@ -132,6 +133,7 @@ typedef union jfes_value_data {
     jfes_object_t           *object_val;        /**< Object JSON value. */
 } jfes_value_data_t;
 
+/** JSON value structure. */
 struct jfes_value {
     jfes_value_type_t       type;               /**< JSON value type. */
     jfes_value_data_t       data;               /**< Value data. */
@@ -200,7 +202,7 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_parse_data(jfes_config_t *config, const char *json,
+jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     jfes_size_t length, jfes_value_t *value);
 
 /**

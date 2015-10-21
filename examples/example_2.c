@@ -25,7 +25,7 @@ int example_2_entry(int argc, char **argv) {
     config.jfes_free = free;
 
     jfes_value_t value;
-    jfes_status_t status = jfes_parse_data(&config, json_data, buffer_size, &value);
+    jfes_status_t status = jfes_parse_to_value(&config, json_data, buffer_size, &value);
 
     /*          ...             */
     /* Do something with value. */
