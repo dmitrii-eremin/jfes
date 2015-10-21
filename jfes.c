@@ -218,6 +218,112 @@ static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
 }
 
 /**
+    Analyses string and returns its integer value.
+
+    \param[in]      data                String to analysis.
+    \param[in]      length              String length.
+
+    \return         Integer representation of the input data.
+*/
+static int jfes_string_to_integer(const char *data, jfes_size_t length) {
+    if (!data || length == 0) {
+        return 0;
+    }
+
+    int result = 0;
+    int sign = 1;
+
+    jfes_size_t offset = 0;
+
+    if (data[0] == '-') {
+        sign = -1;
+        offset = 1;
+    }
+
+    for (jfes_size_t i = offset; i < length; i++) {
+        char c = data[i];
+        if (c >= '0' && c <= '9') {
+            result = result * 10 + (c - '0');
+        }
+    }
+
+    return result * sign;
+}
+
+/**
+    Analyses string and returns its double value.
+
+    \param[in]      data                String to analysis.
+    \param[in]      length              String length.
+
+    \return         Double representation of the input data.
+*/
+static double jfes_string_to_double(const char *data, jfes_size_t length) {
+    if (!data || length == 0) {
+        return 0.0;
+    }
+
+    double result = 0.0;
+    double sign = 1.0;
+
+    int after_dot = 0;
+    int exp = 0;
+
+    int direction = 0;
+
+    jfes_size_t index = 0;
+
+    if (data[0] == '-') {
+        sign = -1.0;
+        index = 1;
+    }
+
+    for (; index < length; index++) {
+        char c = data[index];
+        if (c >= '0' && c <= '9') {
+            result = result * 10.0 + (c - '0');
+            if (after_dot) {
+                exp--;
+            }
+        } 
+        else if (c == '.') {
+            after_dot = 1;
+            continue;
+        }
+        else if (index + 2 < length && (c == 'e' || c == 'E')) {
+            index++;
+            if (data[index] == '+') {
+                direction = 1;
+                index++;
+            }
+            else if (data[index] == '-') {
+                direction = -1;
+                index++;
+            }
+            break;
+        }
+    }
+
+    if (index < length) {
+        if (jfes_is_integer(data + index, length - index)) {
+            int new_exp = jfes_string_to_integer(data + index, length - index);
+            exp += direction * new_exp;
+        }
+    }
+
+    while (exp < 0) {
+        result /= 10.0;
+        exp++;
+    }
+    while (exp > 0) {
+        result *= 10.0;
+        exp--;
+    }
+
+    return sign * result;
+}
+
+/**
     Allocates a fresh unused token from the token pool.
 
     \param[in, out] parser              Pointer to the jfes_parser_t object.
@@ -607,10 +713,13 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
         break;
 
     case jfes_integer:
+        value->data.int_val = jfes_string_to_integer(tokens_data->json_data + token->start,
+            token->end - token->start);
         break;
 
     case jfes_double:
-        return jfes_invalid_arguments;
+        value->data.double_val = jfes_string_to_double(tokens_data->json_data + token->start,
+            token->end - token->start);
         break;
 
     case jfes_string:
