@@ -16,7 +16,7 @@ int example_3_entry(int argc, char **argv) {
     long buffer_size = 2048;
     char *json_data = malloc(buffer_size * sizeof(char));
 
-    if (!get_file_content("samples/example_3.json", json_data, &buffer_size)) {
+    if (!get_file_content("json/example_3.json", json_data, &buffer_size)) {
         return -1;
     }
 
@@ -32,16 +32,25 @@ int example_3_entry(int argc, char **argv) {
         if (children) {
             jfes_value_t *child = jfes_create_object_value(&config);
 
-            jfes_set_object_child(&config, child, jfes_create_string_value(&config, "Paul", 0), "first_name", 0);
-            jfes_set_object_child(&config, child, jfes_create_string_value(&config, "Smith", 0), "middle_name", 0);
-            jfes_set_object_child(&config, child, jfes_create_integer_value(&config, 1), "age", 0);
+            /* 
+                Below we create a property with a key "first_name" and json value "Paul".
+                We place this property into the `child` variable.
+            */
+            jfes_set_object_property(&config, child, jfes_create_string_value(&config, "Paul", 0), "first_name", 0);
+
+            /* The same thing with "middle_name" and "age". */
+            jfes_set_object_property(&config, child, jfes_create_string_value(&config, "Smith", 0), "middle_name", 0);
+            jfes_set_object_property(&config, child, jfes_create_integer_value(&config, 1), "age", 0);
 
             /* And now we wants to rewrite age value with 2. */
-            jfes_set_object_child(&config, child, jfes_create_integer_value(&config, 2), "age", 0);
+            jfes_set_object_property(&config, child, jfes_create_integer_value(&config, 2), "age", 0);
 
-            jfes_remove_object_child(&config, child, "middle_name", 0);
+            jfes_remove_object_property(&config, child, "middle_name", 0);
             
-            status = jfes_add_to_array_at(&config, children, child, 1);
+            /* Place value `child` in `children` json array at index 1. */
+            status = jfes_place_to_array_at(&config, children, child, 1);
+
+            jfes_set_object_property(&config, &value, jfes_create_null_value(&config), "null_property", 0);
 
             /* And now we dumps out new object to the memory. */
             char beauty_dump[1024];

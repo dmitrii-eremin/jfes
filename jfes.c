@@ -145,12 +145,28 @@ static jfes_size_t jfes_strlen(const char *data) {
 }
 
 /**
-    Analyzes input string on the subject of whether it is an boolean.
+    Analyzes input string on the subject of whether it is null.
 
     \param[in]      data                Input string.
     \param[in]      length              Length if the input string.
 
-    \return         Zero, if input string not an boolean. Otherwise anything.
+    \return         Zero, if input string not null. Otherwise anything.
+*/
+static int jfes_is_null(const char *data, jfes_size_t length) {
+    if (!data || length != 4) {
+        return 0;
+    }
+
+    return  jfes_memcmp(data, "null", 4) == 0;
+}
+
+/**
+    Analyzes input string on the subject of whether it is boolean.
+
+    \param[in]      data                Input string.
+    \param[in]      length              Length if the input string.
+
+    \return         Zero, if input string not boolean. Otherwise anything.
 */
 static int jfes_is_boolean(const char *data, jfes_size_t length) {
     if (!data || length < 4) {
@@ -536,6 +552,9 @@ static jfes_token_type_t jfes_get_token_type(const char *data, jfes_size_t lengt
     }
 
     jfes_token_type_t type = jfes_undefined;
+    if (jfes_is_null(data, length)) {
+        return jfes_null;
+    }
     if (jfes_is_boolean(data, length)) {
         return jfes_boolean;
     }
@@ -885,6 +904,9 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
     value->type = (jfes_value_type_t)token->type;
 
     switch (token->type) {
+    case jfes_null:
+        break;
+
     case jfes_boolean:
         value->data.bool_val = jfes_string_to_boolean(tokens_data->json_data + token->start, 
             token->end - token->start);
@@ -1059,6 +1081,17 @@ jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
     return jfes_success;
 }
 
+jfes_value_t *jfes_create_null_value(jfes_config_t *config) {
+    if (!config) {
+        return JFES_NULL;
+    }
+
+    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    result->type = jfes_null;
+
+    return result;
+}
+
 jfes_value_t *jfes_create_boolean_value(jfes_config_t *config, int value) {
     if (!config) {
         return JFES_NULL;
@@ -1177,15 +1210,15 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
     return JFES_NULL;
 }
 
-jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
+jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
     if (!config || !value || !item || value->type != jfes_array) {
         return jfes_invalid_arguments;
     }
 
-    return jfes_add_to_array_at(config, value, item, value->data.array_val->count);
+    return jfes_place_to_array_at(config, value, item, value->data.array_val->count);
 }
 
-jfes_status_t jfes_add_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
+jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
     if (!config || !value || !item || value->type != jfes_array) {
         return jfes_invalid_arguments;
     }
@@ -1234,7 +1267,7 @@ jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value,
     return jfes_success;
 }
 
-jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value,
+jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *value,
     jfes_value_t *item, const char *key, jfes_size_t key_length) {
     if (!config || !value || !item || !key || value->type != jfes_object) {
         return jfes_invalid_arguments;
@@ -1275,7 +1308,7 @@ jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value,
     return jfes_success;
 }
 
-jfes_status_t jfes_remove_object_child(jfes_config_t *config, jfes_value_t *value,
+jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *value,
     const char *key, jfes_size_t key_length) {
     if (!config || !value || value->type != jfes_object || !key) {
         return jfes_invalid_arguments;
@@ -1477,6 +1510,8 @@ jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream
     }
 
     switch (value->type) {
+    case jfes_null:
+        return jfes_add_to_stringstream(stream, "null", 0);
     case jfes_boolean:
         return jfes_add_to_stringstream(stream, jfes_boolean_to_string(value->data.bool_val), 0);
 

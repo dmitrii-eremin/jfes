@@ -1,11 +1,13 @@
 {
-    "first_name": "John", 
-    "last_name": "Black", 
+    "first_name": "John",
+    "last_name": "Black",
     "age": 35,
     "children": [
         { "first_name": "Alice", "age": 5 },
         { "first_name": "Robert", "age": 8 },
     ],
+
+    "wife": null,
 
     "simple" : [ 12, 15, 76, 34, 75, "Test", 23.1, 65.3, false, true, false ]
 }

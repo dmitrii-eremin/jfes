@@ -140,12 +140,12 @@ jfes_value_t *jfes_create_object_value(jfes_config_t *config);
 jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t key_length);
 jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, jfes_size_t key_length);
 
-jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
-jfes_status_t jfes_add_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
+jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
+jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
 jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value, jfes_size_t index);
 
-jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, const char *key, jfes_size_t key_length);
-jfes_status_t jfes_remove_object_child(jfes_config_t *config, jfes_value_t *value, const char *key, jfes_size_t key_length);
+jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, const char *key, jfes_size_t key_length);
+jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *value, const char *key, jfes_size_t key_length);
 ```
 
 ### Serializing to json string

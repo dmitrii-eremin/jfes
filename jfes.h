@@ -52,13 +52,15 @@ typedef struct jfes_string {
 typedef enum jfes_token_type {
     jfes_undefined          = 0x00,             /**< Undefined token type. */
     
-    jfes_boolean            = 0x01,             /**< Boolean token type. */
-    jfes_integer            = 0x02,             /**< Integer token type. */
-    jfes_double             = 0x03,             /**< Double token type. */
-    jfes_string             = 0x04,             /**< String token type. */
+    jfes_null               = 0x01,             /**< Null token type. */
 
-    jfes_array              = 0x05,             /**< Array token type. */
-    jfes_object             = 0x06              /**< Object token type. */
+    jfes_boolean            = 0x02,             /**< Boolean token type. */
+    jfes_integer            = 0x03,             /**< Integer token type. */
+    jfes_double             = 0x04,             /**< Double token type. */
+    jfes_string             = 0x05,             /**< String token type. */
+
+    jfes_array              = 0x06,             /**< Array token type. */
+    jfes_object             = 0x07,             /**< Object token type. */
 } jfes_token_type_t;
 
 /** Json value type is the same as token type. */
@@ -217,6 +219,15 @@ jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
 jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value);
 
 /**
+    Allocates new null value.
+
+    \param[in]      config              JFES configuration.
+
+    \return         Allocated JFES value or JFES_NULL, if something went wrong.
+*/
+jfes_value_t *jfes_create_null_value(jfes_config_t *config);
+
+/**
     Allocates new boolean value.
 
     \param[in]      config              JFES configuration.
@@ -310,7 +321,7 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
+jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
 
 /**
     Adds new item to the given array value on the given place.
@@ -322,7 +333,7 @@ jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_add_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
+jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
 
 /**
     Removes an item with fiven index from array.
@@ -347,7 +358,7 @@ jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value,
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value, 
+jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *value, 
     jfes_value_t *item, const char *key, jfes_size_t key_length);
 
 /**
@@ -361,7 +372,7 @@ jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value,
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_remove_object_child(jfes_config_t *config, jfes_value_t *value, 
+jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *value, 
     const char *key, jfes_size_t key_length);
 
 /**
