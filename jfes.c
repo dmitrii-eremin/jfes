@@ -7,6 +7,9 @@
 
 #include "jfes.h"
 
+/** Needs for the buffer in jfes_(int/double)_to_string. */
+#define JFES_MAX_DIGITS                 64
+
 /**
     Memory comparing function.
 
@@ -343,6 +346,94 @@ static double jfes_string_to_double(const char *data, jfes_size_t length) {
     }
 
     return sign * result;
+}
+
+/**
+    Returns boolean value as string.
+
+    \param[in]      value               Value to stringify.
+
+    \return         String representation of given value.
+*/
+char *jfes_boolean_to_string(int value) {
+    static char *true_value = "true";
+    static char *false_value = "false";
+
+    return value ? true_value : false_value;
+}
+
+/**
+    Returns integer value as string.
+
+    \param[in]      value               Value to stringify.
+
+    \return         String representation of given value.
+*/
+char *jfes_integer_to_string(int value) {
+    static char buf[JFES_MAX_DIGITS + 3];
+    char *p = &buf[0] + JFES_MAX_DIGITS + 2;
+    *--p = '\0';
+
+    int sign = 1;
+    if (value < 0) {
+        sign = -1;
+    }
+
+    do {
+        *--p = '0' + sign * (value % 10);
+        value /= 10;
+    } while (value != 0);
+
+    if (sign < 0) {
+        *--p = '-';
+    }
+
+    return p;
+}
+
+/**
+    Returns double value as string.
+
+    \param[in]      value               Value to stringify.
+
+    \return         String representation of given value.
+*/
+char *jfes_double_to_string(double value) {
+    static char buf[JFES_MAX_DIGITS + 2];
+
+    static double precision_eps = 0.000000001;
+
+    int int_value = (int)value;
+    double fractional_value = value - int_value;
+    if (fractional_value < 0) {
+        fractional_value = -fractional_value;
+    }
+    
+    double precision = precision_eps;
+    while (precision < 1.0) {
+        fractional_value *= 10;
+        if (fractional_value - (int)fractional_value < precision_eps) {
+            break;
+        }
+
+        precision *= 10.0;
+    }
+    
+    int fractional_int = (int)fractional_value;
+
+    char *int_value_s = jfes_integer_to_string(int_value);
+    jfes_size_t value_length = jfes_strlen(int_value_s);
+
+    jfes_memcpy(&buf[0], int_value_s, value_length);
+    buf[value_length] = '.';
+
+    char *fractional_value_s = jfes_integer_to_string(fractional_int);
+    jfes_size_t fractional_value_length = jfes_strlen(fractional_value_s);
+
+    jfes_memcpy(&buf[value_length + 1], fractional_value_s, fractional_value_length);
+    buf[value_length + 1 + fractional_value_length] = '\0';
+
+    return &buf[0];
 }
 
 /**

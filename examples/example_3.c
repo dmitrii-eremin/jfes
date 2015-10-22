@@ -11,12 +11,8 @@
 /* For malloc and free functions. You can use your own memory functions. */
 #include <stdlib.h>
 
-#include <crtdbg.h>
-
 /** Example 2 entry point. */
 int example_3_entry(int argc, char **argv) {
-    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-
     long buffer_size = 2048;
     char *json_data = malloc(buffer_size * sizeof(char));
 
@@ -43,6 +39,11 @@ int example_3_entry(int argc, char **argv) {
             jfes_set_object_child(&config, child, jfes_create_integer_value(&config, 2), "age", 0);
             
             status = jfes_add_to_array(&config, children, child);
+
+            /* And now we dumps out new object to the memory. */
+            /*char dump[1024];
+            jfes_size_t dump_size = 1024;
+            jfes_dump_value(children, &dump[0], &dump_size, 1);*/
         }
 
         jfes_free_value(&config, &value);
