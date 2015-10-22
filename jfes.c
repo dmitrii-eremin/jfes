@@ -69,6 +69,28 @@ static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *
 }
 
 /**
+    Deallocates jfes_string.
+
+    \param[in]      config              JFES configuration.
+    \param[out]     str                 String to be deallocated.
+
+    \return         jfes_success if everything is OK.
+*/
+static jfes_status_t jfes_free_string(jfes_config_t *config, jfes_string_t *str) {
+    if (!config || !str) {
+        return jfes_invalid_arguments;
+    }
+
+    if (str->size > 0) {
+        str->size = 0;
+        config->jfes_free(str->data);
+        str->data = JFES_NULL;
+    }
+
+    return jfes_success;
+}
+
+/**
     Creates string object.
 
     \param[in]      config              JFES configuration.
@@ -109,7 +131,7 @@ static jfes_size_t jfes_strlen(const char *data) {
     const char *p = data;
     while (*p++);
 
-    return (jfes_size_t)(p - data);
+    return (jfes_size_t)(p - data) - 1;
 }
 
 /**
@@ -878,5 +900,183 @@ jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
         }
     }
 
+    return jfes_success;
+}
+
+jfes_value_t *jfes_create_boolean_value(jfes_config_t *config, int value) {
+    if (!config) {
+        return JFES_NULL;
+    }
+
+    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    result->type = jfes_boolean;
+    result->data.bool_val = value;
+
+    return result;
+}
+
+jfes_value_t *jfes_create_integer_value(jfes_config_t *config, int value) {
+    if (!config) {
+        return JFES_NULL;
+    }
+
+    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    result->type = jfes_integer;
+    result->data.int_val = value;
+
+    return result;
+}
+
+jfes_value_t *jfes_create_double_value(jfes_config_t *config, double value) {
+    if (!config) {
+        return JFES_NULL;
+    }
+
+    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    result->type = jfes_double;
+    result->data.double_val = value;
+
+    return result;
+}
+
+jfes_value_t *jfes_create_string_value(jfes_config_t *config, const char *value, jfes_size_t length) {
+    if (!config || !value) {
+        return JFES_NULL;
+    }
+
+    if (length == 0) {
+        length = jfes_strlen(value);
+    }
+
+    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    result->type = jfes_string;
+    
+    jfes_status_t status = jfes_create_string(config, &result->data.string_val, value, length);
+    if (jfes_status_is_bad(status)) {
+        config->jfes_free(result);
+        return JFES_NULL;
+    }
+
+    return result;
+}
+
+jfes_value_t *jfes_create_array_value(jfes_config_t *config) {
+    if (!config) {
+        return JFES_NULL;
+    }
+
+    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    result->type = jfes_array;
+
+    result->data.array_val = (jfes_array_t*)config->jfes_malloc(sizeof(jfes_array_t));
+    result->data.array_val->count = 0;
+    result->data.array_val->items = JFES_NULL;
+
+    return result;
+}
+
+jfes_value_t *jfes_create_object_value(jfes_config_t *config) {
+    if (!config) {
+        return JFES_NULL;
+    }
+
+    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    result->type = jfes_object;
+
+    result->data.object_val = (jfes_object_t*)config->jfes_malloc(sizeof(jfes_object_t));
+    result->data.object_val->count = 0;
+    result->data.object_val->items = JFES_NULL;
+
+    return result;
+}
+
+jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t key_length) {
+    jfes_object_map_t *mapped_item = jfes_get_mapped_child(value, key, key_length);
+    if (mapped_item) {
+        return mapped_item->value;
+    }
+
+    return JFES_NULL;
+}
+
+jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, jfes_size_t key_length) {
+    if (!value || !key || value->type != jfes_object) {
+        return JFES_NULL;
+    }
+
+    if (key_length == 0) {
+        key_length = jfes_strlen(key);
+    }
+
+    for (jfes_size_t i = 0; i < value->data.object_val->count; i++) {
+        jfes_object_map_t *item = value->data.object_val->items[i];
+        if ((item->key.size - 1) != key_length ||
+            jfes_memcmp(item->key.data, key, key_length) != 0) {
+            continue;
+        }
+
+        return item;
+    }
+
+    return JFES_NULL;
+}
+
+jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
+    if (!config || !value || !item || value->type != jfes_array) {
+        return jfes_invalid_arguments;
+    }
+
+    jfes_value_t **items_array = config->jfes_malloc((value->data.array_val->count + 1) * sizeof(jfes_value_t*));
+
+    for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
+        items_array[i] = value->data.array_val->items[i];
+    }
+
+    items_array[value->data.array_val->count] = item;
+    value->data.array_val->count++;
+
+    config->jfes_free(value->data.array_val->items);
+    value->data.array_val->items = items_array;
+    return jfes_success;
+}
+
+jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value,
+    jfes_value_t *item, const char *key, jfes_size_t key_length) {
+    if (!config || !value || !item || !key || value->type != jfes_object) {
+        return jfes_invalid_arguments;
+    }
+
+    if (key_length == 0) {
+        key_length = jfes_strlen(key);
+    }
+
+    jfes_object_map_t *object_map = jfes_get_mapped_child(value, key, key_length);
+    if (object_map) {
+        jfes_free_value(config, object_map->value);
+        config->jfes_free(object_map->value);
+    }
+    else {
+        jfes_object_map_t **items_map = config->jfes_malloc((value->data.object_val->count + 1) * sizeof(jfes_object_map_t*));
+
+        for (jfes_size_t i = 0; i < value->data.object_val->count; i++) {
+            items_map[i] = value->data.object_val->items[i];
+        }
+
+        items_map[value->data.object_val->count] = config->jfes_malloc(sizeof(jfes_object_map_t));
+        object_map = items_map[value->data.object_val->count];
+
+        jfes_status_t status = jfes_create_string(config, &object_map->key, key, key_length);
+        if (jfes_status_is_bad(status)) {
+            config->jfes_free(items_map);
+            return status;
+        }
+
+        config->jfes_free(value->data.object_val->items);
+
+        value->data.object_val->items = items_map;
+        value->data.object_val->count++;
+    }
+
+    object_map->value = item;
     return jfes_success;
 }

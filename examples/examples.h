@@ -14,6 +14,9 @@ int example_1_entry(int argc, char **argv);
 /** Entry point for example_2. */
 int example_2_entry(int argc, char **argv);
 
+/** Entry point for example_3. */
+int example_3_entry(int argc, char **argv);
+
 /** 
     Helper function. Loads file content.
 
