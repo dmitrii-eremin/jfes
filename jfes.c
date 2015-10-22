@@ -10,6 +10,13 @@
 /** Needs for the buffer in jfes_(int/double)_to_string. */
 #define JFES_MAX_DIGITS                 64
 
+/** Stream helper. */
+typedef struct jfes_stringstream {
+    char                    *data;              /**< String data. */
+    jfes_size_t             max_size;           /**< Maximal data size. */
+    jfes_size_t             current_index;      /**< Current index to the end of the data. */
+} jfes_stringstream_t;
+
 /**
     Memory comparing function.
 
@@ -434,6 +441,27 @@ char *jfes_double_to_string(double value) {
     buf[value_length + 1 + fractional_value_length] = '\0';
 
     return &buf[0];
+}
+
+/**
+    Initialize jfes_stringstream object.
+
+    \param[out]     stream              Object to initialize.
+    \param[in]      data                Pointer to the memory.
+    \param[in]      max_size            Size of allocated memory.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_initialize_stringstream(jfes_stringstream_t *stream, char *data, jfes_size_t max_size) {
+    if (!stream || !data || max_size == 0) {
+        return jfes_invalid_arguments;
+    }
+
+    stream->data = data;
+    stream->max_size = max_size;
+    stream->current_index = 0;
+
+    return jfes_success;
 }
 
 /**
@@ -1117,17 +1145,55 @@ jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes
         return jfes_invalid_arguments;
     }
 
-    jfes_value_t **items_array = config->jfes_malloc((value->data.array_val->count + 1) * sizeof(jfes_value_t*));
+    return jfes_add_to_array_at(config, value, item, value->data.array_val->count);
+}
 
-    for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
-        items_array[i] = value->data.array_val->items[i];
+jfes_status_t jfes_add_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
+    if (!config || !value || !item || value->type != jfes_array) {
+        return jfes_invalid_arguments;
     }
 
-    items_array[value->data.array_val->count] = item;
+    if (place_at > value->data.array_val->count) {
+        place_at = value->data.array_val->count;
+    }
+
+    jfes_value_t **items_array = config->jfes_malloc((value->data.array_val->count + 1) * sizeof(jfes_value_t*));
+
+    jfes_size_t offset = 0;
+    for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
+        if (i == place_at) {
+            offset = 1;
+        }
+        items_array[i + offset] = value->data.array_val->items[i];
+    }
+
+    items_array[place_at] = item;
+
     value->data.array_val->count++;
 
     config->jfes_free(value->data.array_val->items);
     value->data.array_val->items = items_array;
+    return jfes_success;
+}
+
+jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value, jfes_size_t index) {
+    if (!config || !value || value->type != jfes_array) {
+        return jfes_invalid_arguments;
+    }
+
+    if (index >= value->data.array_val->count) {
+        return jfes_not_found;
+    }
+
+    jfes_value_t *item = value->data.array_val->items[index];
+    jfes_free_value(config, item);
+    config->jfes_free(item);
+
+    for (jfes_size_t i = index; i < value->data.array_val->count - 1; i++) {
+        value->data.array_val->items[i] = value->data.array_val->items[i + 1];
+    }
+
+    value->data.array_val->count--;
     return jfes_success;
 }
 
@@ -1169,5 +1235,71 @@ jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value,
     }
 
     object_map->value = item;
+    return jfes_success;
+}
+
+jfes_status_t jfes_remove_object_child(jfes_config_t *config, jfes_value_t *value,
+    const char *key, jfes_size_t key_length) {
+    if (!config || !value || value->type != jfes_object || !key) {
+        return jfes_invalid_arguments;
+    }
+
+    if (key_length == 0) {
+        key_length = jfes_strlen(key);
+    }
+
+    jfes_object_map_t *mapped_item = jfes_get_mapped_child(value, key, key_length);
+    if (!mapped_item) {
+        return jfes_not_found;
+    }
+
+    jfes_free_value(config, mapped_item->value);
+    config->jfes_free(mapped_item->value);
+
+    jfes_free_string(config, &mapped_item->key);
+
+    jfes_size_t i = 0;
+    for (i = 0; i < value->data.object_val->count; i++) {
+        jfes_object_map_t *item = value->data.object_val->items[i];
+        if (item == mapped_item) {
+            config->jfes_free(item);
+            mapped_item = JFES_NULL;
+            break;
+        }
+    }
+
+    /* We found item to remove and set it to JFES_NULL. Next we need to shift other items. */
+    if (!mapped_item) {
+        for (; i < value->data.object_val->count - 1; i++) {
+            value->data.object_val->items[i] = value->data.object_val->items[i + 1];
+        }
+    }
+
+    value->data.object_val->count--;
+
+    return jfes_success;
+}
+
+jfes_status_t jfes_value_to_stream(jfes_value_t *value, jfes_stringstream_t *stream, int beautiful) {
+    return jfes_success;
+}
+
+jfes_status_t jfes_value_to_string(jfes_value_t *value, char *data, jfes_size_t *max_size, int beautiful) {
+    if (!data || !max_size || *max_size == 0) {
+        return jfes_invalid_arguments;
+    }
+
+    jfes_stringstream_t stream;
+    jfes_status_t status = jfes_initialize_stringstream(&stream, data, *max_size);
+    if (jfes_status_is_bad(status)) {
+        return status;
+    }
+
+    status = jfes_value_to_stream(value, &stream, beautiful);
+    if (jfes_status_is_bad(status)) {
+        return status;
+    }
+
+    *max_size = stream.current_index;
     return jfes_success;
 }

@@ -33,10 +33,13 @@ int example_3_entry(int argc, char **argv) {
             jfes_value_t *child = jfes_create_object_value(&config);
 
             jfes_set_object_child(&config, child, jfes_create_string_value(&config, "Paul", 0), "first_name", 0);
+            jfes_set_object_child(&config, child, jfes_create_string_value(&config, "Smith", 0), "middle_name", 0);
             jfes_set_object_child(&config, child, jfes_create_integer_value(&config, 1), "age", 0);
 
             /* And now we wants to rewrite age value with 2. */
             jfes_set_object_child(&config, child, jfes_create_integer_value(&config, 2), "age", 0);
+
+            jfes_remove_object_child(&config, child, "middle_name", 0);
             
             status = jfes_add_to_array(&config, children, child);
 

@@ -33,6 +33,7 @@ typedef enum jfes_status {
     jfes_invalid_input      = 0x04,             /**< Invalid character in JSON string. */
     jfes_error_part         = 0x05,             /**< The string is not a full JSON packet. More bytes expected. */
     jfes_unknown_type       = 0x06,             /**< Unknown token type. */
+    jfes_not_found          = 0x07,             /**< Something was not found. */
 } jfes_status_t;
 
 /** Memory allocator function type. */
@@ -312,6 +313,29 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
 jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
 
 /**
+    Adds new item to the given array value on the given place.
+
+    \param[in]      config              JFES configuration.
+    \param[in]      value               Array value.
+    \param[in]      item                Item to add. Must be allocated on heap.
+    \param[in]      place_at            Index to place.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_add_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
+
+/**
+    Removes an item with fiven index from array.
+
+    \param[in]      config              JFES configuration.
+    \param[in]      value               Array value.
+    \param[in]      index               Index to remove.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value, jfes_size_t index);
+
+/**
     Adds new item to the given object.
 
     \param[in]      config              JFES configuration.
@@ -325,5 +349,31 @@ jfes_status_t jfes_add_to_array(jfes_config_t *config, jfes_value_t *value, jfes
 */
 jfes_status_t jfes_set_object_child(jfes_config_t *config, jfes_value_t *value, 
     jfes_value_t *item, const char *key, jfes_size_t key_length);
+
+/**
+    Removes object child with the given key.
+
+    \param[in]      config              JFES configuration.
+    \param[in]      value               Array value.
+    \param[in]      key                 Child key.
+    \param[in]      key_length          Optional. Child key length. You can pass 0,
+    if key string is zero-terminated.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_remove_object_child(jfes_config_t *config, jfes_value_t *value, 
+    const char *key, jfes_size_t key_length);
+
+/**
+    Dumps JFES value to memory.
+
+    \param[in]      value               JFES value to dump.
+    \param[out]     data                Allocated memory to store.
+    \param[in, out] max_size            Maximal size of data. Will store data length.
+    \param[in]      beautiful           Beautiful JSON.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_value_to_string(jfes_value_t *value, char *data, jfes_size_t *max_size, int beautiful);
 
 #endif
