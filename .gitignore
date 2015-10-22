@@ -5,6 +5,7 @@
 *.vcxproj.filters
 Doxyfile
 Doxygen
+~tmp_*
 
 # User-specific files
 *.suo

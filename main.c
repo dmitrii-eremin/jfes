@@ -16,6 +16,22 @@ int main(int argc, char **argv) {
     return example_3_entry(argc, argv);
 }
 
+int set_file_content(const char *filename, char *content, long content_size) {
+    if (!filename || !content || content_size <= 0) {
+        return 0;
+    }
+
+    FILE *f = fopen(filename, "w");
+    if (!f) {
+        return 0;
+    }
+
+    fwrite(content, content_size, sizeof(char), f);    
+    fclose(f);
+
+    return 1;
+}
+
 int get_file_content(const char *filename, char *content, long *max_content_size) {
     if (!filename || !content || !max_content_size || *max_content_size <= 0) {
         return 0;

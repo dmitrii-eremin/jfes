@@ -41,12 +41,22 @@ int example_3_entry(int argc, char **argv) {
 
             jfes_remove_object_child(&config, child, "middle_name", 0);
             
-            status = jfes_add_to_array(&config, children, child);
+            status = jfes_add_to_array_at(&config, children, child, 1);
 
             /* And now we dumps out new object to the memory. */
-            /*char dump[1024];
+            char beauty_dump[1024];
             jfes_size_t dump_size = 1024;
-            jfes_dump_value(children, &dump[0], &dump_size, 1);*/
+            jfes_value_to_string(&value, &beauty_dump[0], &dump_size, 1);
+            beauty_dump[dump_size] = '\0';
+
+            set_file_content("~tmp_example_3.beauty.out.json", beauty_dump, dump_size);
+
+            char ugly_dump[1024];
+            dump_size = 1024;
+            jfes_value_to_string(&value, &ugly_dump[0], &dump_size, 0);
+            ugly_dump[dump_size] = '\0';
+            
+            set_file_content("~tmp_example_3.ugly.out.json", ugly_dump, dump_size);
         }
 
         jfes_free_value(&config, &value);

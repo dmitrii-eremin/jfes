@@ -465,6 +465,43 @@ jfes_status_t jfes_initialize_stringstream(jfes_stringstream_t *stream, char *da
 }
 
 /**
+    Adds given data to the given stream.
+
+    \param[out]     stream              Stringstream object.
+    \param[in]      data                Data to add.
+    \param[in]      data_length         Optional. Child key length. You can pass 0,
+                                        if key string is zero-terminated.
+    
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_add_to_stringstream(jfes_stringstream_t *stream, char *data, jfes_size_t data_length) {
+    if (!stream || !data) {
+        return jfes_invalid_arguments;
+    }
+
+    if (stream->current_index >= stream->max_size) {
+        return jfes_no_memory;
+    }
+
+    if (data_length == 0) {
+        data_length = jfes_strlen(data);
+    }
+    jfes_status_t status = jfes_success;
+
+    jfes_size_t size_to_add = data_length;
+    
+    if (stream->current_index + size_to_add > stream->max_size) {
+        size_to_add = stream->max_size - stream->current_index;
+        status = jfes_no_memory;
+    }
+
+    jfes_memcpy(stream->data + stream->current_index, data, size_to_add);
+
+    stream->current_index += size_to_add;
+    return status;
+}
+
+/**
     Allocates a fresh unused token from the token pool.
 
     \param[in, out] parser              Pointer to the jfes_parser_t object.
@@ -1280,8 +1317,204 @@ jfes_status_t jfes_remove_object_child(jfes_config_t *config, jfes_value_t *valu
     return jfes_success;
 }
 
-jfes_status_t jfes_value_to_stream(jfes_value_t *value, jfes_stringstream_t *stream, int beautiful) {
+/**
+Dumps JFES value to memory.
+
+\param[in]      value               JFES value to dump.
+\param[out]     data                Allocated memory to store.
+\param[in, out] max_size            Maximal size of data. Will store data length.
+\param[in]      beautiful           Beautiful JSON.
+\param[in]      indent              Indent. Works only when beautiful is true.
+\param[in]      indent_string       String to indent JSON.
+
+\return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream,
+    int beautiful, jfes_size_t indent, const char *indent_string);
+
+/**
+    Dumps JFES array value to memory.
+
+    \param[in]      value               JFES value to dump.
+    \param[out]     data                Allocated memory to store.
+    \param[in, out] max_size            Maximal size of data. Will store data length.
+    \param[in]      beautiful           Beautiful JSON.
+    \param[in]      indent              Indent. Works only when beautiful is true.
+    \param[in]      indent_string       String to indent JSON.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_array_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream, 
+    int beautiful, jfes_size_t indent, const char *indent_string) {
+    if (!value || !stream || value->type != jfes_array) {
+        return jfes_invalid_arguments;
+    }
+
+    int with_indent = 1;
+
+    jfes_add_to_stringstream(stream, "[", 0);
+    if (beautiful) {
+        if (value->data.array_val->count > 0 &&
+            (value->data.array_val->items[0]->type == jfes_object || value->data.array_val->items[0]->type == jfes_array)) {
+            jfes_add_to_stringstream(stream, "\n", 0);
+        }
+        else {
+            with_indent = 0;
+            jfes_add_to_stringstream(stream, " ", 0);
+        }
+    }
+
+    for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
+        jfes_value_t *item = value->data.array_val->items[i];
+        
+        if (beautiful && with_indent) {
+            for (jfes_size_t i = 0; i < indent + 1; i++) {
+                jfes_add_to_stringstream(stream, (char*)indent_string, 0);
+            }
+        }
+
+        jfes_status_t status = jfes_value_to_stream_helper(item, stream, beautiful, indent + 1, indent_string);
+        if (jfes_status_is_bad(status)) {
+            return status;
+        }
+
+        if (i < value->data.array_val->count - 1) {
+            jfes_add_to_stringstream(stream, ",", 0);
+        }
+
+        if (beautiful) {
+            if ((i < value->data.array_val->count - 1 && 
+                (value->data.array_val->items[i + 1]->type == jfes_array ||
+                value->data.array_val->items[i + 1]->type == jfes_object)) 
+                ||
+                (i == value->data.array_val->count - 1 && with_indent)
+                ||
+                (value->data.array_val->items[i]->type == jfes_array || 
+                 value->data.array_val->items[i]->type == jfes_object)) {
+                jfes_add_to_stringstream(stream, "\n", 0);
+                with_indent = 1;
+            }
+            else {
+                jfes_add_to_stringstream(stream, " ", 0);
+                with_indent = 0;
+            }
+        }
+    }
+
+    if (beautiful && with_indent) {
+        for (jfes_size_t i = 0; i < indent; i++) {
+            jfes_add_to_stringstream(stream, (char*)indent_string, 0);
+        }
+    }
+    return jfes_add_to_stringstream(stream, "]", 0);
+}
+
+/**
+    Dumps JFES object value to memory.
+
+    \param[in]      value               JFES value to dump.
+    \param[out]     data                Allocated memory to store.
+    \param[in, out] max_size            Maximal size of data. Will store data length.
+    \param[in]      beautiful           Beautiful JSON.
+    \param[in]      indent              Indent. Works only when beautiful is true.
+    \param[in]      indent_string       String to indent JSON.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_object_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream,
+    int beautiful, jfes_size_t indent, const char *indent_string) {
+    if (!value || !stream || value->type != jfes_object) {
+        return jfes_invalid_arguments;
+    }
+
+    jfes_add_to_stringstream(stream, "{", 0);
+    if (beautiful) {
+        jfes_add_to_stringstream(stream, "\n", 0);
+    }
+
+    for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
+        jfes_object_map_t *object_map = value->data.object_val->items[i];
+
+        if (beautiful) {
+            for (jfes_size_t i = 0; i < indent + 1; i++) {
+                jfes_add_to_stringstream(stream, (char*)indent_string, 0);
+            }
+        }
+
+        jfes_add_to_stringstream(stream, "\"", 0);
+        jfes_add_to_stringstream(stream, object_map->key.data, object_map->key.size - 1);
+        jfes_add_to_stringstream(stream, "\":", 0);
+        if (beautiful) {
+            jfes_add_to_stringstream(stream, " ", 0);
+        }
+
+        jfes_status_t status = jfes_value_to_stream_helper(object_map->value, stream, beautiful, indent + 1, indent_string);
+        if (jfes_status_is_bad(status)) {
+            return status;
+        }
+
+        if (i < value->data.array_val->count - 1) {
+            jfes_add_to_stringstream(stream, ",", 0);
+        }
+
+        if (beautiful) {
+            jfes_add_to_stringstream(stream, "\n", 0);
+        }
+    }
+
+    if (beautiful) {
+        for (jfes_size_t i = 0; i < indent; i++) {
+            jfes_add_to_stringstream(stream, (char*)indent_string, 0);
+        }
+    }
+    return jfes_add_to_stringstream(stream, "}", 0);
+}
+
+jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream, 
+                                        int beautiful, jfes_size_t indent, const char *indent_string) {
+    if (!value || !stream) {
+        return jfes_invalid_arguments;
+    }
+
+    switch (value->type) {
+    case jfes_boolean:
+        return jfes_add_to_stringstream(stream, jfes_boolean_to_string(value->data.bool_val), 0);
+
+    case jfes_integer:
+        return jfes_add_to_stringstream(stream, jfes_integer_to_string(value->data.int_val), 0);
+
+    case jfes_double:
+        return jfes_add_to_stringstream(stream, jfes_double_to_string(value->data.double_val), 0);
+
+    case jfes_string:
+        jfes_add_to_stringstream(stream, "\"", 0);
+        jfes_add_to_stringstream(stream, value->data.string_val.data, value->data.string_val.size - 1);
+        return jfes_add_to_stringstream(stream, "\"", 0);
+
+    case jfes_array:
+        return jfes_array_value_to_stream_helper(value, stream, beautiful, indent, indent_string);
+
+    case jfes_object:
+        return jfes_object_value_to_stream_helper(value, stream, beautiful, indent, indent_string);
+
+    default:
+        break;
+    }
     return jfes_success;
+}
+
+/**
+    Dumps JFES value to memory stream.
+
+    \param[in]      value               JFES value to dump.
+    \param[out]     data                Allocated memory to store.
+    \param[in, out] max_size            Maximal size of data. Will store data length.
+    \param[in]      beautiful           Beautiful JSON.
+
+    \return         jfes_success if everything is OK.
+*/
+jfes_status_t jfes_value_to_stream(jfes_value_t *value, jfes_stringstream_t *stream, int beautiful) {
+    return jfes_value_to_stream_helper(value, stream, beautiful, 0, "    ");
 }
 
 jfes_status_t jfes_value_to_string(jfes_value_t *value, char *data, jfes_size_t *max_size, int beautiful) {
