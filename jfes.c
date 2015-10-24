@@ -10,6 +10,15 @@
 /** Needs for the buffer in jfes_(int/double)_to_string. */
 #define JFES_MAX_DIGITS                 64
 
+/** Integer types */
+typedef enum jfes_integer_type {
+    jfes_not_integer                = 0x00,     /**< String can't be interpreted as integer. */
+    jfes_octal_integer              = 0x08,     /**< Octal integer (starts from zero: `023` = `19`) */
+    jfes_decimal_integer            = 0x0A,     /**< Decimal integer */
+    jfes_hexadecimal_integer        = 0x10,     /**< Hexadecimal integer (mask: `0x...` or `0X...`) */
+    
+} jfes_integer_type_t;
+
 /** Stream helper. */
 typedef struct jfes_stringstream {
     char                    *data;              /**< String data. */
@@ -74,7 +83,7 @@ static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *
 
     jfes_status_t status = jfes_success;
 
-    str->data = (char*)config->jfes_malloc(str->size);
+    str->data = (char*)config->jfes_malloc(size);
     if (!str->data) {
         status = jfes_no_memory;
         size = 0;
@@ -169,7 +178,7 @@ static int jfes_is_null(const char *data, jfes_size_t length) {
         length = jfes_strlen(data);
     }
 
-    return  jfes_memcmp(data, "null", 4) == 0;
+    return  jfes_memcmp(data, "null", jfes_strlen("null")) == 0;
 }
 
 /**
@@ -190,8 +199,8 @@ static int jfes_is_boolean(const char *data, jfes_size_t length) {
         length = jfes_strlen(data);
     }
 
-    return  jfes_memcmp(data, "true", 4) == 0 ||
-            jfes_memcmp(data, "false", 5) == 0;
+    return  jfes_memcmp(data, "true", jfes_strlen("true")) == 0 ||
+            jfes_memcmp(data, "false", jfes_strlen("false")) == 0;
 }
 
 /**
@@ -207,18 +216,31 @@ static int jfes_is_integer(const char *data, jfes_size_t length) {
         return 0;
     }
 
-    int offset = 0;
+    jfes_size_t offset = 0;
     if (data[0] == '-') {
         offset = 1;
     }
 
-    for (jfes_size_t i = offset; i < length; i++) {
-        if (data[i] < (int)'0' || data[i] > (int)'9') {
-            return 0;
-        }
+    int hexadecimal_case = 0;
+    if (length > offset + 2 && data[offset] == '0' && 
+       (data[offset + 1] == 'x' || data[offset + 1] == 'X')) {
+        hexadecimal_case = 1;
     }
 
-    return 1;
+    int is_integer = 1;
+
+    for (jfes_size_t i = offset; i < length; i++) {
+        if ((data[i] >= '0' && data[i] <= '9') || (hexadecimal_case &&
+            ((data[i] >= 'A' && data[i] <= 'F') || (data[i] >= 'a' && data[i] <= 'f'))) || 
+            (i == offset + 1 && ((data[i] == 'x') || (data[i] == 'X')))) {
+            continue;
+        }
+
+        is_integer = 0;
+        break;
+    }
+
+    return is_integer;
 }
 
 /**
@@ -234,7 +256,7 @@ static int jfes_is_double(const char *data, jfes_size_t length) {
         return 0;
     }
 
-    int offset = 0;
+    jfes_size_t offset = 0;
     if (data[0] == '-') {
         offset = 1;
     }
@@ -243,7 +265,7 @@ static int jfes_is_double(const char *data, jfes_size_t length) {
     int exp_already_been = 0;
 
     for (jfes_size_t i = offset; i < length; i++) {
-        if (data[i] < (int)'0' || data[i] > (int)'9') {
+        if (data[i] < '0' || data[i] > '9') {
             if (data[i] == '.' && !dot_already_been) {
                 dot_already_been = 1;
                 continue;
@@ -266,37 +288,94 @@ static int jfes_is_double(const char *data, jfes_size_t length) {
     Analyzes string and returns its boolean value.
 
     \param[in]      data                String to analysis.
-    \param[in]      length              String length.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string;
 
     \return         1, if data == 'true'. Otherwise 0.
 */
 static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
-    if (!data || length < 4) {
+    jfes_size_t true_length = jfes_strlen("true");
+
+    if (!data || length < true_length) {
         return 0;
     }
 
-    if (jfes_memcmp(data, "true", 4) == 0) {
+    if (jfes_memcmp(data, "true", true_length) == 0) {
         return 1;
     }
 
     return 0;
 }
 
+/** 
+    Analyses string and returns integer type.
+
+    \param[in]      data                String to analysis.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string;
+
+    \return         Integer type.
+*/
+jfes_integer_type_t jfes_get_integer_type(const char *data, jfes_size_t length) {
+    if (!data) {
+        return jfes_not_integer;
+    }
+
+    if (length == 0) {
+        length = jfes_strlen(data);
+    }
+
+    if (!jfes_is_integer(data, length)) {
+        return jfes_not_integer;
+    }
+
+    jfes_size_t offset = 0;
+    if (data[0] == '-') {
+        offset = 1;
+    }
+
+    if (length > offset + 2) {
+        if (data[offset] == '0') {
+            if (data[offset + 1] == 'x' || data[offset + 1] == 'X') {
+                return jfes_hexadecimal_integer;
+            }
+
+            return jfes_octal_integer;
+        }
+    }
+
+    return jfes_decimal_integer;
+}
+
 /**
     Analyses string and returns its integer value.
 
-    \param[in]      data                String to analysis.
-    \param[in]      length              String length.
+    \param[in]      data                String to analysis. Can be decimal, octal and hexadecimal.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string;
 
     \return         Integer representation of the input data.
+
+    \warning        This function doen't check that string is correct integer, it's just ignoring 
+                    all incorrect characters. If you aren't sure of the correctness of the input arguments,
+                    check them by `jfes_is_integer()` function.
 */
 static int jfes_string_to_integer(const char *data, jfes_size_t length) {
-    if (!data || length == 0) {
+    if (!data) {
         return 0;
+    }
+
+    if (length == 0) {
+        length = jfes_strlen(data);
     }
 
     int result = 0;
     int sign = 1;
+
+    jfes_integer_type_t base = jfes_get_integer_type(data, length);
+    if (base == jfes_not_integer) {
+        return 0;
+    }
 
     jfes_size_t offset = 0;
 
@@ -307,8 +386,19 @@ static int jfes_string_to_integer(const char *data, jfes_size_t length) {
 
     for (jfes_size_t i = offset; i < length; i++) {
         char c = data[i];
-        if (c >= '0' && c <= '9') {
-            result = result * 10 + (c - '0');
+        if ((c >= '0' && c <= '9') || (base == jfes_hexadecimal_integer && 
+            ((c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))) {
+            int value = 0;
+            if (c >= '0' && c <= '9') {
+                value = c - '0';
+            }
+            else if (c >= 'A' && c <= 'F') {
+                value = c - 'A' + 10;
+            }
+            else if (c >= 'a' && c <= 'f') {
+                value = c - 'a' + 10;
+            }
+            result = result * (int)base + value;
         }
     }
 
@@ -319,12 +409,17 @@ static int jfes_string_to_integer(const char *data, jfes_size_t length) {
     Analyses string and returns its double value.
 
     \param[in]      data                String to analysis.
-    \param[in]      length              String length.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string;
 
     \return         Double representation of the input data.
+
+    \warning        This function doen't check that string is correct floating point value, it's just ignoring
+                    all incorrect characters. If you aren't sure of the correctness of the input arguments,
+                    check them by `jfes_is_double()` function.
 */
 static double jfes_string_to_double(const char *data, jfes_size_t length) {
-    if (!data || length == 0) {
+    if (!data) {
         return 0.0;
     }
 
@@ -337,6 +432,10 @@ static double jfes_string_to_double(const char *data, jfes_size_t length) {
     int direction = 0;
 
     jfes_size_t index = 0;
+
+    if (length == 0) {
+        length = jfes_strlen(data);
+    }
 
     if (data[0] == '-') {
         sign = -1.0;
@@ -396,10 +495,7 @@ static double jfes_string_to_double(const char *data, jfes_size_t length) {
     \return         String representation of given value.
 */
 char *jfes_boolean_to_string(int value) {
-    static char *true_value = "true";
-    static char *false_value = "false";
-
-    return value ? true_value : false_value;
+    return value ? "true" : "false";
 }
 
 /**
