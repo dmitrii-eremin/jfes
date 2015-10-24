@@ -1,20 +1,20 @@
 # JFES
-*Based on [jsmn](https://github.com/zserge/jsmn) project.*
+*Based on the [jsmn](https://github.com/zserge/jsmn) project.*
 
-Json For Embedded Systems (JFES) is a minimalistic [json](http://www.json.org/) engine, written in plain C. It can be easily integrated into the code for embedded systems.
+Json For Embedded Systems (JFES) is a minimalistic [json](http://www.json.org/) engine written in plain C. It can be easily integrated into the code for embedded systems.
 
 ## Features
 * compatible with C99
-* no dependencies (I'm seriously!)
+* no dependencies (I'm serious!)
 * highly portable
-* you can use it only like json parser
+* you can use it as a json parser only
 * incremental single-pass parsing
 
 ## API
 
 ### Initializing
 
-Before use you need to initialize `jfes_config_t` object.
+Before use you need to initialize the `jfes_config_t` object.
 ```
 /** JFES config structure. */
 typedef struct jfes_config {
@@ -23,7 +23,7 @@ typedef struct jfes_config {
 } jfes_config_t;
 ```
 
-Below you can see prototypes of memory management functions:
+Below you can see the prototypes of the memory management functions:
 ```
 /** Memory allocator function type. */
 typedef void *(__cdecl *jfes_malloc_t)(jfes_size_t);
@@ -31,9 +31,9 @@ typedef void *(__cdecl *jfes_malloc_t)(jfes_size_t);
 /** Memory deallocator function type. */
 typedef void (__cdecl *jfes_free_t)(void*);
 ```
-As you can see, these functions has the same prototype with C functions from standard library.
+As you can see, these functions have the same prototype as the C standard library functions.
 
-So, you can initialize JFES configuration with this code:
+So, you can initialize JFES configuration with the following code:
 ```
 #include <stdlib.h>
 
@@ -45,12 +45,12 @@ config.jfes_malloc = malloc;
 config.jfes_free = free;
 ```
 
-But, if you need to use your own memory management functions, use them.
+But, if you need to use your own memory management functions, you can use them.
 
 ### Parser (optional)
 
-If you need only to parse *.json file without allocating any values (like [jsmn](https://github.com/zserge/jsmn)), you can only parse json string and separate it on tokens.
-In this case, you need to use only two functions:
+If you just need to parse a *.json file without allocating any values (like [jsmn](https://github.com/zserge/jsmn)), you can parse a json string and separate it into tokens.
+In this case, you only need to use two functions below:
 ```
 /**
     JFES parser initialization.
@@ -77,7 +77,7 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
     jfes_size_t length, jfes_token_t *tokens, jfes_size_t *max_tokens_count);
 ```
 
-You can see parsing example below.
+You can see a parsing example below.
 
 ### Loading *.json into value
 
@@ -91,7 +91,7 @@ struct jfes_value {
 };
 ```
 
-Value type (`jfes_value_type_t`) can be one of this:
+Value type (`jfes_value_type_t`) can be one of the following:
 * `jfes_boolean`
 * `jfes_integer`
 * `jfes_double`
@@ -114,7 +114,7 @@ typedef union jfes_value_data {
 } jfes_value_data_t;
 ```
 
-You can easily load json string into the value with this code:
+You can easily load a json string into the value by using the following code:
 ```
 jfes_config_t config;
 config.jfes_malloc = malloc;
@@ -150,15 +150,15 @@ jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *v
 
 ### Serializing to json string
 
-You can serialize any `jfes_value_t` to string with one line (actually, three lines, but two of them is for help):
+You can serialize any `jfes_value_t` to string with one line (actually, three lines, but two of them are for help):
 ```
 char dump[1024];
 jfes_size_t dump_size = 1024;
 jfes_value_to_string(&value, beauty_dump, &dump_size, 1);
 beauty_dump[dump_size] = '\0';  /* If you need null-terminated string. */
 ```
-`dump_size` will store dump size.
-If you pass fourth argument as 1, dump will be beautified. And if zero, dump will be ugly.
+`dump_size` will store the dump size.
+If you pass the fourth argument as 1, the dump will be beautified. And if 0, the dump will be ugly.
 
 ## Examples
 You can find examples [here](https://github.com/NeonMercury/jfes/tree/master/examples).
