@@ -16,7 +16,7 @@ int main(int argc, char **argv) {
     return example_3_entry(argc, argv);
 }
 
-int set_file_content(const char *filename, char *content, long content_size) {
+int set_file_content(const char *filename, const char *content, unsigned long content_size) {
     if (!filename || !content || content_size <= 0) {
         return 0;
     }
@@ -26,13 +26,13 @@ int set_file_content(const char *filename, char *content, long content_size) {
         return 0;
     }
 
-    fwrite(content, content_size, sizeof(char), f);    
+    int result = (int)fwrite(content, sizeof(char), content_size, f);
     fclose(f);
 
-    return 1;
+    return result;
 }
 
-int get_file_content(const char *filename, char *content, long *max_content_size) {
+int get_file_content(const char *filename, char *content, unsigned long *max_content_size) {
     if (!filename || !content || !max_content_size || *max_content_size <= 0) {
         return 0;
     }
@@ -42,19 +42,8 @@ int get_file_content(const char *filename, char *content, long *max_content_size
         return 0;
     }
 
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    long read_size = fsize;
-    if (*max_content_size < read_size) {
-        read_size = *max_content_size;
-    }
-
-    fread(content, read_size, sizeof(char), f);
+    *max_content_size = fread(content, sizeof(char), *max_content_size, f);
     fclose(f);
-
-    *max_content_size = read_size;
 
     return 1;
 }

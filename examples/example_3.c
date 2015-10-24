@@ -13,7 +13,7 @@
 
 /** Example 2 entry point. */
 int example_3_entry(int argc, char **argv) {
-    long buffer_size = 2048;
+    unsigned long buffer_size = 2048;
     char *json_data = malloc(buffer_size * sizeof(char));
 
     if (!get_file_content("json/example_3.json", json_data, &buffer_size)) {

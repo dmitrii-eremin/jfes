@@ -26,7 +26,7 @@ int example_3_entry(int argc, char **argv);
 
     \return         Zero, if function failed. Anything otherwise.
 */
-int set_file_content(const char *filename, char *content, long content_size);
+int set_file_content(const char *filename, const char *content, unsigned long content_size);
 
 /** 
     Helper function. Loads file content.
@@ -37,6 +37,6 @@ int set_file_content(const char *filename, char *content, long content_size);
 
     \return         Zero, if function failed. Anything otherwise.
 */
-int get_file_content(const char *filename, char *content, long *max_content_size);
+int get_file_content(const char *filename, char *content, unsigned long *max_content_size);
 
 #endif
