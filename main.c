@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
 }
 
 int set_file_content(const char *filename, const char *content, unsigned long content_size) {
-    if (!filename || !content || content_size <= 0) {
+    if (!filename || !content || content_size == 0) {
         return 0;
     }
 
@@ -33,7 +33,7 @@ int set_file_content(const char *filename, const char *content, unsigned long co
 }
 
 int get_file_content(const char *filename, char *content, unsigned long *max_content_size) {
-    if (!filename || !content || !max_content_size || *max_content_size <= 0) {
+    if (!filename || !content || !max_content_size || *max_content_size == 0) {
         return 0;
     }
 
