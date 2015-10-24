@@ -67,6 +67,17 @@ static void *jfes_memcpy(void *dst, const void *src, jfes_size_t count) {
     return dst;
 }
 
+/**
+    This functions checks configuration object and its members.
+
+    \param[in]      config              Object to be checked.
+
+    \return         Zero, if something wrong. Anything otherwise.
+*/
+static int jfes_check_configuration(jfes_config_t *config) {
+    return config && config->jfes_malloc && config->jfes_free;
+}
+
 /** 
     Allocates jfes_string.
 
@@ -77,7 +88,7 @@ static void *jfes_memcpy(void *dst, const void *src, jfes_size_t count) {
     \return         jfes_success if everything is OK.
 */
 static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *str, jfes_size_t size) {
-    if (!config || !str || size == 0) {
+    if (!jfes_check_configuration(config) || !str || size == 0) {
         return jfes_invalid_arguments;
     }
 
@@ -103,7 +114,7 @@ static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *
     \return         jfes_success if everything is OK.
 */
 static jfes_status_t jfes_free_string(jfes_config_t *config, jfes_string_t *str) {
-    if (!config || !str) {
+    if (!jfes_check_configuration(config) || !str) {
         return jfes_invalid_arguments;
     }
 
@@ -127,7 +138,7 @@ static jfes_status_t jfes_free_string(jfes_config_t *config, jfes_string_t *str)
     \return         jfes_success if everything is OK.
 */
 static jfes_status_t jfes_create_string(jfes_config_t *config, jfes_string_t *str, const char *string, jfes_size_t size) {
-    if (!config || !str || !string || size == 0) {
+    if (!jfes_check_configuration(config) || !str || !string || size == 0) {
         return jfes_invalid_arguments;
     }
 
@@ -1126,7 +1137,7 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
 
 jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     jfes_size_t length, jfes_value_t *value) {
-    if (!config || !json || length == 0 || !value) {
+    if (!jfes_check_configuration(config) || !json || length == 0 || !value) {
         return jfes_invalid_arguments;
     }
 
@@ -1180,7 +1191,7 @@ jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
 }
 
 jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
-    if (!config || !value) {
+    if (!jfes_check_configuration(config) || !value) {
         return jfes_invalid_arguments;
     }
 
@@ -1284,7 +1295,7 @@ jfes_value_t *jfes_create_double_value(jfes_config_t *config, double value) {
 }
 
 jfes_value_t *jfes_create_string_value(jfes_config_t *config, const char *value, jfes_size_t length) {
-    if (!config || !value) {
+    if (!jfes_check_configuration(config) || !value) {
         return JFES_NULL;
     }
 
@@ -1384,7 +1395,7 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
 }
 
 jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
-    if (!config || !value || !item || value->type != jfes_array) {
+    if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_array) {
         return jfes_invalid_arguments;
     }
 
@@ -1392,7 +1403,7 @@ jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jf
 }
 
 jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
-    if (!config || !value || !item || value->type != jfes_array) {
+    if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_array) {
         return jfes_invalid_arguments;
     }
 
@@ -1423,7 +1434,7 @@ jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value,
 }
 
 jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value, jfes_size_t index) {
-    if (!config || !value || value->type != jfes_array) {
+    if (!jfes_check_configuration(config) || !value || value->type != jfes_array) {
         return jfes_invalid_arguments;
     }
 
@@ -1445,7 +1456,7 @@ jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value,
 
 jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *value,
     jfes_value_t *item, const char *key, jfes_size_t key_length) {
-    if (!config || !value || !item || !key || value->type != jfes_object) {
+    if (!jfes_check_configuration(config) || !value || !item || !key || value->type != jfes_object) {
         return jfes_invalid_arguments;
     }
 
@@ -1493,7 +1504,7 @@ jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *valu
 
 jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *value,
     const char *key, jfes_size_t key_length) {
-    if (!config || !value || value->type != jfes_object || !key) {
+    if (!jfes_check_configuration(config) || !value || value->type != jfes_object || !key) {
         return jfes_invalid_arguments;
     }
 
