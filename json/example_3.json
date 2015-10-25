@@ -1,7 +1,7 @@
 {
     "first_name": "John",
     "last_name": "Black",
-    "age": 35,
+    "age": 0x2B,
     "children": [
         { "first_name": "Alice", "age": 5 },
         { "first_name": "Robert", "age": 8 },
