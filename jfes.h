@@ -50,17 +50,17 @@ typedef struct jfes_string {
 
 /** JFES token types */
 typedef enum jfes_token_type {
-    jfes_undefined          = 0x00,             /**< Undefined token type. */
+    jfes_type_undefined          = 0x00,        /**< Undefined token type. */
     
-    jfes_null               = 0x01,             /**< Null token type. */
+    jfes_type_null               = 0x01,        /**< Null token type. */
 
-    jfes_boolean            = 0x02,             /**< Boolean token type. */
-    jfes_integer            = 0x03,             /**< Integer token type. */
-    jfes_double             = 0x04,             /**< Double token type. */
-    jfes_string             = 0x05,             /**< String token type. */
+    jfes_type_boolean            = 0x02,        /**< Boolean token type. */
+    jfes_type_integer            = 0x03,        /**< Integer token type. */
+    jfes_type_double             = 0x04,        /**< Double token type. */
+    jfes_type_string             = 0x05,        /**< String token type. */
 
-    jfes_array              = 0x06,             /**< Array token type. */
-    jfes_object             = 0x07,             /**< Object token type. */
+    jfes_type_array              = 0x06,        /**< Array token type. */
+    jfes_type_object             = 0x07,        /**< Object token type. */
 } jfes_token_type_t;
 
 /** Json value type is the same as token type. */

@@ -92,12 +92,12 @@ struct jfes_value {
 ```
 
 Value type (`jfes_value_type_t`) can be one of the following:
-* `jfes_boolean`
-* `jfes_integer`
-* `jfes_double`
-* `jfes_string`
-* `jfes_array`
-* `jfes_object`
+* `jfes_type_boolean`
+* `jfes_type_integer`
+* `jfes_type_double`
+* `jfes_type_string`
+* `jfes_type_array`
+* `jfes_type_object`
 
 And `jfes_value_data_t` is:
 ```
