@@ -668,27 +668,27 @@ static jfes_token_t *jfes_allocate_token(jfes_parser_t *parser, jfes_token_t *to
     \param[in]      data                Source string bytes.
     \param[in]      length              Source string length.
 
-    \return         Most likely token type or `jfes_undefined`.
+    \return         Most likely token type or `jfes_type_undefined`.
 */
 static jfes_token_type_t jfes_get_token_type(const char *data, jfes_size_t length) {
     if (!data || length == 0) {
-        return jfes_undefined;
+        return jfes_type_undefined;
     }
 
     if (jfes_is_null(data, length)) {
-        return jfes_null;
+        return jfes_type_null;
     }
     if (jfes_is_boolean(data, length)) {
-        return jfes_boolean;
+        return jfes_type_boolean;
     }
     else if (jfes_is_integer(data, length)) {
-        return jfes_integer;
+        return jfes_type_integer;
     }
     else if (jfes_is_double(data, length)) {
-        return jfes_double;
+        return jfes_type_double;
     }
    
-    return jfes_undefined;
+    return jfes_type_undefined;
 }
 
 /**
@@ -793,7 +793,7 @@ static jfes_status_t jfes_parse_string(jfes_parser_t *parser, const char *json, 
                 return jfes_no_memory;
             }
 
-            jfes_fill_token(token, jfes_string, start + 1, parser->pos);
+            jfes_fill_token(token, jfes_type_string, start + 1, parser->pos);
             return jfes_success;
         }
         else if (c == '\\' && parser->pos + 1 < length) {
@@ -884,7 +884,7 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
                     tokens[parser->superior_token].size++;
                 }
 
-                token->type = (c == '{' ? jfes_object : jfes_array);
+                token->type = (c == '{' ? jfes_type_object : jfes_type_array);
                 token->start = parser->pos;
                 parser->superior_token = parser->next_token - 1;
             }
@@ -942,10 +942,10 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
         case ',':
             {
                 if (parser->superior_token != -1 &&
-                    tokens[parser->superior_token].type != jfes_array &&
-                    tokens[parser->superior_token].type != jfes_object) {
+                    tokens[parser->superior_token].type != jfes_type_array &&
+                    tokens[parser->superior_token].type != jfes_type_object) {
                     for (int i = parser->next_token - 1; i >= 0; i--) {
-                        if (tokens[i].type == jfes_array || tokens[i].type == jfes_object) {
+                        if (tokens[i].type == jfes_type_array || tokens[i].type == jfes_type_object) {
                             if (tokens[i].start != -1 && tokens[i].end == -1) {
                                 parser->superior_token = i;
                                 break;
@@ -1025,30 +1025,30 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
     value->type = (jfes_value_type_t)token->type;
 
     switch (token->type) {
-    case jfes_null:
+    case jfes_type_null:
         break;
 
-    case jfes_boolean:
+    case jfes_type_boolean:
         value->data.bool_val = jfes_string_to_boolean(tokens_data->json_data + token->start, 
             token->end - token->start);
         break;
 
-    case jfes_integer:
+    case jfes_type_integer:
         value->data.int_val = jfes_string_to_integer(tokens_data->json_data + token->start,
             token->end - token->start);
         break;
 
-    case jfes_double:
+    case jfes_type_double:
         value->data.double_val = jfes_string_to_double(tokens_data->json_data + token->start,
             token->end - token->start);
         break;
 
-    case jfes_string:
+    case jfes_type_string:
         jfes_create_string(tokens_data->config, &value->data.string_val, 
             tokens_data->json_data + token->start, token->end - token->start);
         break;
 
-    case jfes_array:
+    case jfes_type_array:
         value->data.array_val = (jfes_array_t*)jfes_malloc(sizeof(jfes_array_t));
         if (!value->data.array_val) {
             return jfes_no_memory;
@@ -1084,7 +1084,7 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
         }
         break;
 
-    case jfes_object:
+    case jfes_type_object:
         value->data.object_val = (jfes_object_t*)jfes_malloc(sizeof(jfes_object_t));
         if (!value->data.object_val) {
             return jfes_no_memory;
@@ -1195,7 +1195,7 @@ jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
         return jfes_invalid_arguments;
     }
 
-    if (value->type == jfes_array) {
+    if (value->type == jfes_type_array) {
         if (value->data.array_val->count > 0) {
             for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
                 jfes_value_t *item = value->data.array_val->items[i];
@@ -1208,7 +1208,7 @@ jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
 
         config->jfes_free(value->data.array_val);
     }
-    else if (value->type == jfes_object) {
+    else if (value->type == jfes_type_object) {
         if (value->data.object_val->count > 0) {
             for (jfes_size_t i = 0; i < value->data.object_val->count; i++) {
                 jfes_object_map_t *object_map = value->data.object_val->items[i];
@@ -1226,7 +1226,7 @@ jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
 
         config->jfes_free(value->data.object_val);
     }
-    else if (value->type == jfes_string) {
+    else if (value->type == jfes_type_string) {
         if (value->data.string_val.size > 0) {
             config->jfes_free(value->data.string_val.data);
         }
@@ -1244,7 +1244,7 @@ jfes_value_t *jfes_create_null_value(jfes_config_t *config) {
     if (!result) {
         return JFES_NULL;
     }
-    result->type = jfes_null;
+    result->type = jfes_type_null;
 
     return result;
 }
@@ -1258,7 +1258,7 @@ jfes_value_t *jfes_create_boolean_value(jfes_config_t *config, int value) {
     if (!result) {
         return JFES_NULL;
     }
-    result->type = jfes_boolean;
+    result->type = jfes_type_boolean;
     result->data.bool_val = value;
 
     return result;
@@ -1273,7 +1273,7 @@ jfes_value_t *jfes_create_integer_value(jfes_config_t *config, int value) {
     if (!result) {
         return JFES_NULL;
     }
-    result->type = jfes_integer;
+    result->type = jfes_type_integer;
     result->data.int_val = value;
 
     return result;
@@ -1288,7 +1288,7 @@ jfes_value_t *jfes_create_double_value(jfes_config_t *config, double value) {
     if (!result) {
         return JFES_NULL;
     }
-    result->type = jfes_double;
+    result->type = jfes_type_double;
     result->data.double_val = value;
 
     return result;
@@ -1307,7 +1307,7 @@ jfes_value_t *jfes_create_string_value(jfes_config_t *config, const char *value,
     if (!result) {
         return JFES_NULL;
     }
-    result->type = jfes_string;
+    result->type = jfes_type_string;
     
     jfes_status_t status = jfes_create_string(config, &result->data.string_val, value, length);
     if (jfes_status_is_bad(status)) {
@@ -1328,7 +1328,7 @@ jfes_value_t *jfes_create_array_value(jfes_config_t *config) {
         return JFES_NULL;
     }
 
-    result->type = jfes_array;
+    result->type = jfes_type_array;
 
     result->data.array_val = (jfes_array_t*)config->jfes_malloc(sizeof(jfes_array_t));
     if (!result->data.array_val) {
@@ -1350,7 +1350,7 @@ jfes_value_t *jfes_create_object_value(jfes_config_t *config) {
     if (!result) {
         return JFES_NULL;
     }
-    result->type = jfes_object;
+    result->type = jfes_type_object;
 
     result->data.object_val = (jfes_object_t*)config->jfes_malloc(sizeof(jfes_object_t));
     if (!result->data.object_val) {
@@ -1373,7 +1373,7 @@ jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t k
 }
 
 jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, jfes_size_t key_length) {
-    if (!value || !key || value->type != jfes_object) {
+    if (!value || !key || value->type != jfes_type_object) {
         return JFES_NULL;
     }
 
@@ -1395,7 +1395,7 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
 }
 
 jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
-    if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_array) {
+    if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
 
@@ -1403,7 +1403,7 @@ jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jf
 }
 
 jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
-    if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_array) {
+    if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
 
@@ -1434,7 +1434,7 @@ jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value,
 }
 
 jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value, jfes_size_t index) {
-    if (!jfes_check_configuration(config) || !value || value->type != jfes_array) {
+    if (!jfes_check_configuration(config) || !value || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
 
@@ -1456,7 +1456,7 @@ jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value,
 
 jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *value,
     jfes_value_t *item, const char *key, jfes_size_t key_length) {
-    if (!jfes_check_configuration(config) || !value || !item || !key || value->type != jfes_object) {
+    if (!jfes_check_configuration(config) || !value || !item || !key || value->type != jfes_type_object) {
         return jfes_invalid_arguments;
     }
 
@@ -1504,7 +1504,7 @@ jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *valu
 
 jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *value,
     const char *key, jfes_size_t key_length) {
-    if (!jfes_check_configuration(config) || !value || value->type != jfes_object || !key) {
+    if (!jfes_check_configuration(config) || !value || value->type != jfes_type_object || !key) {
         return jfes_invalid_arguments;
     }
 
@@ -1573,7 +1573,7 @@ jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream
 */
 jfes_status_t jfes_array_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream, 
     int beautiful, jfes_size_t indent, const char *indent_string) {
-    if (!value || !stream || value->type != jfes_array) {
+    if (!value || !stream || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
 
@@ -1582,7 +1582,7 @@ jfes_status_t jfes_array_value_to_stream_helper(jfes_value_t *value, jfes_string
     jfes_add_to_stringstream(stream, "[", 0);
     if (beautiful) {
         if (value->data.array_val->count > 0 &&
-            (value->data.array_val->items[0]->type == jfes_object || value->data.array_val->items[0]->type == jfes_array)) {
+            (value->data.array_val->items[0]->type == jfes_type_object || value->data.array_val->items[0]->type == jfes_type_array)) {
             jfes_add_to_stringstream(stream, "\n", 0);
         }
         else {
@@ -1611,13 +1611,13 @@ jfes_status_t jfes_array_value_to_stream_helper(jfes_value_t *value, jfes_string
 
         if (beautiful) {
             if ((i < value->data.array_val->count - 1 && 
-                (value->data.array_val->items[i + 1]->type == jfes_array ||
-                value->data.array_val->items[i + 1]->type == jfes_object)) 
+                (value->data.array_val->items[i + 1]->type == jfes_type_array ||
+                value->data.array_val->items[i + 1]->type == jfes_type_object))
                 ||
                 (i == value->data.array_val->count - 1 && with_indent)
                 ||
-                (value->data.array_val->items[i]->type == jfes_array || 
-                 value->data.array_val->items[i]->type == jfes_object)) {
+                (value->data.array_val->items[i]->type == jfes_type_array ||
+                 value->data.array_val->items[i]->type == jfes_type_object)) {
                 jfes_add_to_stringstream(stream, "\n", 0);
                 with_indent = 1;
             }
@@ -1650,7 +1650,7 @@ jfes_status_t jfes_array_value_to_stream_helper(jfes_value_t *value, jfes_string
 */
 jfes_status_t jfes_object_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream,
     int beautiful, jfes_size_t indent, const char *indent_string) {
-    if (!value || !stream || value->type != jfes_object) {
+    if (!value || !stream || value->type != jfes_type_object) {
         return jfes_invalid_arguments;
     }
 
@@ -1704,26 +1704,26 @@ jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream
     }
 
     switch (value->type) {
-    case jfes_null:
+    case jfes_type_null:
         return jfes_add_to_stringstream(stream, "null", 0);
-    case jfes_boolean:
+    case jfes_type_boolean:
         return jfes_add_to_stringstream(stream, jfes_boolean_to_string(value->data.bool_val), 0);
 
-    case jfes_integer:
+    case jfes_type_integer:
         return jfes_add_to_stringstream(stream, jfes_integer_to_string(value->data.int_val), 0);
 
-    case jfes_double:
+    case jfes_type_double:
         return jfes_add_to_stringstream(stream, jfes_double_to_string(value->data.double_val), 0);
 
-    case jfes_string:
+    case jfes_type_string:
         jfes_add_to_stringstream(stream, "\"", 0);
         jfes_add_to_stringstream(stream, value->data.string_val.data, value->data.string_val.size - 1);
         return jfes_add_to_stringstream(stream, "\"", 0);
 
-    case jfes_array:
+    case jfes_type_array:
         return jfes_array_value_to_stream_helper(value, stream, beautiful, indent, indent_string);
 
-    case jfes_object:
+    case jfes_type_object:
         return jfes_object_value_to_stream_helper(value, stream, beautiful, indent, indent_string);
 
     default:
