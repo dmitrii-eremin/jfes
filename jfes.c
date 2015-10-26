@@ -175,43 +175,31 @@ static jfes_size_t jfes_strlen(const char *data) {
     Analyzes input string on the subject of whether it is null.
 
     \param[in]      data                Input string.
-    \param[in]      length              Optional. Length of the input string.
-                                        You can pass 0, if string is zero-terminated.
 
-    \return         Zero, if input string not null. Otherwise anything.
+    \return         Zero, if input string equals to "null". Otherwise anything.
 */
-static int jfes_is_null(const char *data, jfes_size_t length) {
+static int jfes_is_null(const char *data) {
     if (!data) {
         return 0;
     }
 
-    if (length == 0) {
-        length = jfes_strlen(data);
-    }
-
-    return  jfes_memcmp(data, "null", jfes_strlen("null")) == 0;
+    return jfes_memcmp(data, "null", jfes_strlen("null")) == 0;
 }
 
 /**
     Analyzes input string on the subject of whether it is boolean.
 
     \param[in]      data                Input string.
-    \param[in]      length              Optional. Length if the input string. 
-                                        You can pass 0, if string is zero-terminated.
 
     \return         Zero, if input string not boolean. Otherwise anything.
 */
-static int jfes_is_boolean(const char *data, jfes_size_t length) {
+static int jfes_is_boolean(const char *data) {
     if (!data) {
         return 0;
     }
 
-    if (length == 0) {
-        length = jfes_strlen(data);
-    }
-
-    return  jfes_memcmp(data, "true", jfes_strlen("true")) == 0 ||
-            jfes_memcmp(data, "false", jfes_strlen("false")) == 0;
+    return jfes_memcmp(data, "true", jfes_strlen("true")) == 0 ||
+           jfes_memcmp(data, "false", jfes_strlen("false")) == 0;
 }
 
 /**
