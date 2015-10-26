@@ -23,7 +23,7 @@
 typedef unsigned int jfes_size_t;
 
 /** JFES return statuses. */
-typedef enum jfes_status {
+typedef enum _jfes_status_t {
     jfes_unknown            = 0x00,             /**< Unknown status */
 
     jfes_success            = 0x01,             /**< Last operation finished sucessfully. */
@@ -43,15 +43,15 @@ typedef void *(__cdecl *jfes_malloc_t)(jfes_size_t);
 typedef void (__cdecl *jfes_free_t)(void*);
 
 /** JFES string type. */
-typedef struct jfes_string {
+typedef struct _jfes_string_t {
     char            *data;                      /**< String bytes. */
     jfes_size_t     size;                       /**< Allocated bytes count. */
 } jfes_string_t;
 
 /** JFES token types */
-typedef enum jfes_token_type {
+typedef enum _jfes_token_type_t {
     jfes_undefined          = 0x00,             /**< Undefined token type. */
-    
+
     jfes_null               = 0x01,             /**< Null token type. */
 
     jfes_boolean            = 0x02,             /**< Boolean token type. */
@@ -67,7 +67,7 @@ typedef enum jfes_token_type {
 typedef jfes_token_type_t jfes_value_type_t;
 
 /** JFES token structure. */
-typedef struct jfes_token {
+typedef struct _jfes_token_t {
     jfes_token_type_t       type;               /**< Token type. */
 
     int                     start;              /**< Token start position. */
@@ -76,13 +76,13 @@ typedef struct jfes_token {
 } jfes_token_t;
 
 /** JFES config structure. */
-typedef struct jfes_config {
+typedef struct _jfes_config_t {
     jfes_malloc_t           jfes_malloc;        /**< Memory allocation function. */
     jfes_free_t             jfes_free;          /**< Memory deallocation function. */
 } jfes_config_t;
 
 /** JFES tokens data structure. */
-typedef struct jfes_tokens_data {
+typedef struct _jfes_tokens_data_t {
     jfes_config_t           *config;            /**< JFES configuration. */
 
     const char              *json_data;         /**< JSON string. */
@@ -94,7 +94,7 @@ typedef struct jfes_tokens_data {
 } jfes_tokens_data_t;
 
 /** JFES parser structure. */
-typedef struct jfes_parser {
+typedef struct _jfes_parser_t {
     jfes_size_t             pos;                /**< Current offset in json string. */ 
     jfes_size_t             next_token;         /**< Next token to allocate. */
     int                     superior_token;     /**< Superior token node. */
@@ -107,25 +107,25 @@ typedef struct jfes_parser {
 typedef struct jfes_value jfes_value_t;
 
 /** JFES `key -> value` mapping structure. */
-typedef struct jfes_object_map {
+typedef struct _jfes_object_map_t {
     jfes_string_t           key;                /**< Object key. */
     jfes_value_t            *value;             /**< Oject value. */
 } jfes_object_map_t;
 
 /** JSON array structure. */
-typedef struct jfes_array {
+typedef struct _jfes_array_t {
     jfes_value_t            **items;            /**< JSON items in array. */    
     jfes_size_t             count;              /**< Items count in array. */
 } jfes_array_t;
 
 /** JSON object structure. */
-typedef struct jfes_object {
+typedef struct _jfes_object_t {
     jfes_object_map_t       **items;            /**< JSON items in object. */
     jfes_size_t             count;              /**< Items count in object. */
 } jfes_object_t;
 
 /** JFES value data union. */
-typedef union jfes_value_data {
+typedef union _jfes_value_data_t {
     int                     bool_val;           /**< Boolean JSON value. */
 
     int                     int_val;            /**< Integer JSON value. */
