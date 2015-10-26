@@ -11,13 +11,13 @@
 #define JFES_MAX_DIGITS                 64
 
 /** Integer types */
-typedef enum jfes_type_integer_type {
+typedef enum jfes_integer_type {
     jfes_not_integer                = 0x00,     /**< String can't be interpreted as integer. */
     jfes_octal_integer              = 0x08,     /**< Octal integer (starts from zero: `023` = `19`) */
     jfes_decimal_integer            = 0x0A,     /**< Decimal integer */
     jfes_hexadecimal_integer        = 0x10,     /**< Hexadecimal integer (mask: `0x...` or `0X...`) */
     
-} jfes_type_integer_type_t;
+} jfes_integer_type_t;
 
 /** Stream helper. */
 typedef struct jfes_stringstream {
@@ -327,7 +327,7 @@ static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
 
     \return         Integer type.
 */
-jfes_type_integer_type_t jfes_get_integer_type(const char *data, jfes_size_t length) {
+jfes_integer_type_t jfes_get_integer_type(const char *data, jfes_size_t length) {
     if (!data) {
         return jfes_not_integer;
     }
@@ -383,7 +383,7 @@ static int jfes_string_to_integer(const char *data, jfes_size_t length) {
     int result = 0;
     int sign = 1;
 
-    jfes_type_integer_type_t base = jfes_get_integer_type(data, length);
+    jfes_integer_type_t base = jfes_get_integer_type(data, length);
     if (base == jfes_not_integer) {
         return 0;
     }
@@ -505,7 +505,7 @@ static double jfes_string_to_double(const char *data, jfes_size_t length) {
 
     \return         String representation of given value.
 */
-char *jfes_type_boolean_to_string(int value) {
+char *jfes_boolean_to_string(int value) {
     return value ? "true" : "false";
 }
 
@@ -516,7 +516,7 @@ char *jfes_type_boolean_to_string(int value) {
 
     \return         String representation of given value.
 */
-char *jfes_type_integer_to_string(int value) {
+char *jfes_integer_to_string(int value) {
     static char buf[JFES_MAX_DIGITS + 3];
     char *p = &buf[0] + JFES_MAX_DIGITS + 2;
     *--p = '\0';
@@ -545,7 +545,7 @@ char *jfes_type_integer_to_string(int value) {
 
     \return         String representation of given value.
 */
-char *jfes_type_double_to_string(double value) {
+char *jfes_double_to_string(double value) {
     static char buf[JFES_MAX_DIGITS + 2];
 
     static double precision_eps = 0.000000001;
@@ -568,13 +568,13 @@ char *jfes_type_double_to_string(double value) {
     
     int fractional_int = (int)fractional_value;
 
-    char *int_value_s = jfes_type_integer_to_string(int_value);
+    char *int_value_s = jfes_integer_to_string(int_value);
     jfes_size_t value_length = jfes_strlen(int_value_s);
 
     jfes_memcpy(&buf[0], int_value_s, value_length);
     buf[value_length] = '.';
 
-    char *fractional_value_s = jfes_type_integer_to_string(fractional_int);
+    char *fractional_value_s = jfes_integer_to_string(fractional_int);
     jfes_size_t fractional_value_length = jfes_strlen(fractional_value_s);
 
     jfes_memcpy(&buf[value_length + 1], fractional_value_s, fractional_value_length);
@@ -1707,13 +1707,13 @@ jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream
     case jfes_type_null:
         return jfes_add_to_stringstream(stream, "null", 0);
     case jfes_type_boolean:
-        return jfes_add_to_stringstream(stream, jfes_type_boolean_to_string(value->data.bool_val), 0);
+        return jfes_add_to_stringstream(stream, jfes_boolean_to_string(value->data.bool_val), 0);
 
     case jfes_type_integer:
-        return jfes_add_to_stringstream(stream, jfes_type_integer_to_string(value->data.int_val), 0);
+        return jfes_add_to_stringstream(stream, jfes_integer_to_string(value->data.int_val), 0);
 
     case jfes_type_double:
-        return jfes_add_to_stringstream(stream, jfes_type_double_to_string(value->data.double_val), 0);
+        return jfes_add_to_stringstream(stream, jfes_double_to_string(value->data.double_val), 0);
 
     case jfes_type_string:
         jfes_add_to_stringstream(stream, "\"", 0);
