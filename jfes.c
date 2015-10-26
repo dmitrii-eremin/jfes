@@ -176,7 +176,7 @@ static jfes_size_t jfes_strlen(const char *data) {
 
     \param[in]      data                Input string.
 
-    \return         Zero, if input string equals to "null". Otherwise anything.
+    \return         Zero, if input string not equals to "null". Otherwise anything.
 */
 static int jfes_is_null(const char *data) {
     if (!data) {
