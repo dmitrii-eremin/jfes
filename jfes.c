@@ -663,10 +663,10 @@ static jfes_token_type_t jfes_get_token_type(const char *data, jfes_size_t lengt
         return jfes_type_undefined;
     }
 
-    if (jfes_is_null(data, length)) {
+    if (jfes_is_null(data)) {
         return jfes_type_null;
     }
-    if (jfes_is_boolean(data, length)) {
+    else if (jfes_is_boolean(data)) {
         return jfes_type_boolean;
     }
     else if (jfes_is_integer(data, length)) {
@@ -675,7 +675,7 @@ static jfes_token_type_t jfes_get_token_type(const char *data, jfes_size_t lengt
     else if (jfes_is_double(data, length)) {
         return jfes_type_double;
     }
-   
+
     return jfes_type_undefined;
 }
 
