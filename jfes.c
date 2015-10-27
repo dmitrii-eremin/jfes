@@ -206,13 +206,18 @@ static int jfes_is_boolean(const char *data) {
     Analyzes input string on the subject of whether it is an integer.
 
     \param[in]      data                Input string.
-    \param[in]      length              Length if the input string.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string.
 
     \return         Zero, if input string not an integer. Otherwise anything.
 */
 static int jfes_is_integer(const char *data, jfes_size_t length) {
-    if (!data || length == 0) {
+    if (!data) {
         return 0;
+    }
+
+    if (length == 0) {
+        length = jfes_strlen(data);
     }
 
     jfes_size_t offset = 0;
@@ -231,7 +236,12 @@ static int jfes_is_integer(const char *data, jfes_size_t length) {
     for (jfes_size_t i = offset; i < length; i++) {
         if ((data[i] >= '0' && data[i] <= '9') || (hexadecimal_case &&
             ((data[i] >= 'A' && data[i] <= 'F') || (data[i] >= 'a' && data[i] <= 'f'))) || 
-            (i == offset + 1 && ((data[i] == 'x') || (data[i] == 'X')))) {
+            (i == offset + 1 && ((data[i] == 'x') || (data[i] == 'X')) && length > offset + 2)) {
+
+            if (hexadecimal_case && i == offset && data[i] != '0') {
+                is_integer = 0;
+                break;
+            }
             continue;
         }
 
@@ -246,13 +256,18 @@ static int jfes_is_integer(const char *data, jfes_size_t length) {
     Analyzes input string on the subject of whether it is an double.
 
     \param[in]      data                Input string.
-    \param[in]      length              Length if the input string.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string.
 
     \return         Zero, if input string not an double. Otherwise anything.
 */
 static int jfes_is_double(const char *data, jfes_size_t length) {
-    if (!data || length == 0) {
+    if (!data) {
         return 0;
+    }
+
+    if (length == 0) {
+        length = jfes_strlen(data);
     }
 
     jfes_size_t offset = 0;
@@ -311,7 +326,7 @@ static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
 
     \param[in]      data                String to analysis.
     \param[in]      length              Optional. String length. You can pass zero,
-                                        if `data` null-terminated string;
+                                        if `data` null-terminated string.
 
     \return         Integer type.
 */
@@ -1128,7 +1143,6 @@ jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     if (!jfes_check_configuration(config) || !json || length == 0 || !value) {
         return jfes_invalid_arguments;
     }
-
     jfes_parser_t parser;
     jfes_status_t status = jfes_init_parser(&parser, config);
     if (jfes_status_is_bad(status)) {
