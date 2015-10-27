@@ -175,43 +175,31 @@ static jfes_size_t jfes_strlen(const char *data) {
     Analyzes input string on the subject of whether it is null.
 
     \param[in]      data                Input string.
-    \param[in]      length              Optional. Length of the input string.
-                                        You can pass 0, if string is zero-terminated.
 
-    \return         Zero, if input string not null. Otherwise anything.
+    \return         Zero, if input string not equals to "null". Otherwise anything.
 */
-static int jfes_is_null(const char *data, jfes_size_t length) {
+static int jfes_is_null(const char *data) {
     if (!data) {
         return 0;
     }
 
-    if (length == 0) {
-        length = jfes_strlen(data);
-    }
-
-    return  jfes_memcmp(data, "null", jfes_strlen("null")) == 0;
+    return jfes_memcmp(data, "null", jfes_strlen("null")) == 0;
 }
 
 /**
     Analyzes input string on the subject of whether it is boolean.
 
     \param[in]      data                Input string.
-    \param[in]      length              Optional. Length if the input string. 
-                                        You can pass 0, if string is zero-terminated.
 
     \return         Zero, if input string not boolean. Otherwise anything.
 */
-static int jfes_is_boolean(const char *data, jfes_size_t length) {
+static int jfes_is_boolean(const char *data) {
     if (!data) {
         return 0;
     }
 
-    if (length == 0) {
-        length = jfes_strlen(data);
-    }
-
-    return  jfes_memcmp(data, "true", jfes_strlen("true")) == 0 ||
-            jfes_memcmp(data, "false", jfes_strlen("false")) == 0;
+    return jfes_memcmp(data, "true", jfes_strlen("true")) == 0 ||
+           jfes_memcmp(data, "false", jfes_strlen("false")) == 0;
 }
 
 /**
@@ -675,10 +663,10 @@ static jfes_token_type_t jfes_get_token_type(const char *data, jfes_size_t lengt
         return jfes_type_undefined;
     }
 
-    if (jfes_is_null(data, length)) {
+    if (jfes_is_null(data)) {
         return jfes_type_null;
     }
-    if (jfes_is_boolean(data, length)) {
+    else if (jfes_is_boolean(data)) {
         return jfes_type_boolean;
     }
     else if (jfes_is_integer(data, length)) {
@@ -687,7 +675,7 @@ static jfes_token_type_t jfes_get_token_type(const char *data, jfes_size_t lengt
     else if (jfes_is_double(data, length)) {
         return jfes_type_double;
     }
-   
+
     return jfes_type_undefined;
 }
 
