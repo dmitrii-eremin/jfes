@@ -7,8 +7,11 @@
 
 #include "jfes.h"
 
-/** Needs for the buffer in jfes_(int/double)_to_string. */
+/** Needs for the buffer in jfes_(int/double)_to_string(_r). */
 #define JFES_MAX_DIGITS                 64
+
+/** Needs for the default precision in jfes_double_to_string(_r). */
+#define JFES_DOUBLE_PRECISION           0.000000001
 
 /** Integer types */
 typedef enum jfes_integer_type {
@@ -206,13 +209,18 @@ static int jfes_is_boolean(const char *data) {
     Analyzes input string on the subject of whether it is an integer.
 
     \param[in]      data                Input string.
-    \param[in]      length              Length if the input string.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string.
 
     \return         Zero, if input string not an integer. Otherwise anything.
 */
 static int jfes_is_integer(const char *data, jfes_size_t length) {
-    if (!data || length == 0) {
+    if (!data) {
         return 0;
+    }
+
+    if (length == 0) {
+        length = jfes_strlen(data);
     }
 
     jfes_size_t offset = 0;
@@ -231,7 +239,12 @@ static int jfes_is_integer(const char *data, jfes_size_t length) {
     for (jfes_size_t i = offset; i < length; i++) {
         if ((data[i] >= '0' && data[i] <= '9') || (hexadecimal_case &&
             ((data[i] >= 'A' && data[i] <= 'F') || (data[i] >= 'a' && data[i] <= 'f'))) || 
-            (i == offset + 1 && ((data[i] == 'x') || (data[i] == 'X')))) {
+            (i == offset + 1 && ((data[i] == 'x') || (data[i] == 'X')) && length > offset + 2)) {
+
+            if (hexadecimal_case && i == offset && data[i] != '0') {
+                is_integer = 0;
+                break;
+            }
             continue;
         }
 
@@ -246,13 +259,18 @@ static int jfes_is_integer(const char *data, jfes_size_t length) {
     Analyzes input string on the subject of whether it is an double.
 
     \param[in]      data                Input string.
-    \param[in]      length              Length if the input string.
+    \param[in]      length              Optional. String length. You can pass zero,
+                                        if `data` null-terminated string.
 
     \return         Zero, if input string not an double. Otherwise anything.
 */
 static int jfes_is_double(const char *data, jfes_size_t length) {
-    if (!data || length == 0) {
+    if (!data) {
         return 0;
+    }
+
+    if (length == 0) {
+        length = jfes_strlen(data);
     }
 
     jfes_size_t offset = 0;
@@ -311,7 +329,7 @@ static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
 
     \param[in]      data                String to analysis.
     \param[in]      length              Optional. String length. You can pass zero,
-                                        if `data` null-terminated string;
+                                        if `data` null-terminated string.
 
     \return         Integer type.
 */
@@ -498,16 +516,26 @@ char *jfes_boolean_to_string(int value) {
 }
 
 /**
-    Returns integer value as string.
+    Thread safe version of the `jfes_integer_to_string`.
 
     \param[in]      value               Value to stringify.
+    \param[out]     output              Output buffer to store result.
+    \param[in]      output_size         Maximal size of output buffer.
 
     \return         String representation of given value.
+
+    \warning        output_size must be greater than 1, because the output will be
+    null-terminated (if `output_size == 1`, then this single byte will be '\0').
 */
-char *jfes_integer_to_string(int value) {
-    static char buf[JFES_MAX_DIGITS + 3];
-    char *p = &buf[0] + JFES_MAX_DIGITS + 2;
+char *jfes_integer_to_string_r(int value, char *output, jfes_size_t output_size) {
+    if (!output || output_size <= 1) {
+        return JFES_NULL;
+    }
+
+    char *p = &output[0] + output_size;
     *--p = '\0';
+
+    jfes_size_t number_length = 0;
 
     int sign = 1;
     if (value < 0) {
@@ -517,13 +545,90 @@ char *jfes_integer_to_string(int value) {
     do {
         *--p = '0' + (char)(sign * (value % 10));
         value /= 10;
-    } while (value != 0);
+        number_length++;
+    } while (value != 0 && p > output);
 
-    if (sign < 0) {
+    if (sign < 0 && p > output) {
         *--p = '-';
+        number_length++;
     }
 
-    return p;
+    if (p == output && value != 0) {
+        return JFES_NULL;
+    }
+
+    if (number_length + 1 < output_size) {
+        for (jfes_size_t i = 0; i < number_length + 1; i++) {
+            output[i] = *(p + i);
+        }
+    }
+
+    return output;
+}
+
+/**
+    Returns integer value as string.
+
+    \param[in]      value               Value to stringify.
+
+    \return         String representation of given value.
+*/
+char *jfes_integer_to_string(int value) {
+    static char buf[JFES_MAX_DIGITS + 1];
+    return jfes_integer_to_string_r(value, &buf[0], JFES_MAX_DIGITS);
+}
+
+/**
+    Thread safe version of the `jfes_double_to_string`.
+
+    \param[in]      value               Value to stringify.
+    \param[out]     output              Output buffer to store result.
+    \param[in]      output_size         Maximal size of output buffer.
+    \param[in]      precision_eps       Double precision (like 0.00001).
+
+    \return         String representation of given value.
+
+    \warning        output_size must be greater than 1, because the output will be
+    null-terminated (if `output_size == 1`, then this single byte will be '\0').
+*/
+char *jfes_double_to_string_r(double value, char *output, jfes_size_t output_size, double precision_eps) {
+    if (!output || output_size <= 1) {
+        return JFES_NULL;
+    }
+
+    int int_value = (int)value;
+    double fractional_value = value - int_value;
+    if (fractional_value < 0) {
+        fractional_value = -fractional_value;
+    }
+
+    double precision = precision_eps;
+    while (precision < 1.0) {
+        fractional_value *= 10;
+        if (fractional_value - (int)fractional_value < precision_eps) {
+            break;
+        }
+
+        precision *= 10.0;
+    }
+
+    int fractional_int = (int)fractional_value;
+
+    char *int_value_s = jfes_integer_to_string_r(int_value, &output[0], output_size);
+    if (!int_value_s) {
+        return JFES_NULL;
+    }
+    jfes_size_t value_length = jfes_strlen(int_value_s);
+
+    output[value_length] = '.';
+
+    char *fractional_value_s = jfes_integer_to_string_r(fractional_int, 
+        &output[value_length + 1], output_size - value_length - 1);
+    if (!fractional_value_s) {
+        return JFES_NULL;
+    }
+
+    return &output[0];
 }
 
 /**
@@ -534,41 +639,10 @@ char *jfes_integer_to_string(int value) {
     \return         String representation of given value.
 */
 char *jfes_double_to_string(double value) {
-    static char buf[JFES_MAX_DIGITS + 2];
+    static char buf[JFES_MAX_DIGITS];
 
-    static double precision_eps = 0.000000001;
-
-    int int_value = (int)value;
-    double fractional_value = value - int_value;
-    if (fractional_value < 0) {
-        fractional_value = -fractional_value;
-    }
-    
-    double precision = precision_eps;
-    while (precision < 1.0) {
-        fractional_value *= 10;
-        if (fractional_value - (int)fractional_value < precision_eps) {
-            break;
-        }
-
-        precision *= 10.0;
-    }
-    
-    int fractional_int = (int)fractional_value;
-
-    char *int_value_s = jfes_integer_to_string(int_value);
-    jfes_size_t value_length = jfes_strlen(int_value_s);
-
-    jfes_memcpy(&buf[0], int_value_s, value_length);
-    buf[value_length] = '.';
-
-    char *fractional_value_s = jfes_integer_to_string(fractional_int);
-    jfes_size_t fractional_value_length = jfes_strlen(fractional_value_s);
-
-    jfes_memcpy(&buf[value_length + 1], fractional_value_s, fractional_value_length);
-    buf[value_length + 1 + fractional_value_length] = '\0';
-
-    return &buf[0];
+    static double precision_eps = JFES_DOUBLE_PRECISION;
+    return jfes_double_to_string_r(value, &buf[0], JFES_MAX_DIGITS, precision_eps);
 }
 
 /**
@@ -1128,7 +1202,6 @@ jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     if (!jfes_check_configuration(config) || !json || length == 0 || !value) {
         return jfes_invalid_arguments;
     }
-
     jfes_parser_t parser;
     jfes_status_t status = jfes_init_parser(&parser, config);
     if (jfes_status_is_bad(status)) {
@@ -1698,10 +1771,17 @@ jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream
         return jfes_add_to_stringstream(stream, jfes_boolean_to_string(value->data.bool_val), 0);
 
     case jfes_type_integer:
-        return jfes_add_to_stringstream(stream, jfes_integer_to_string(value->data.int_val), 0);
+    {
+        char buffer[JFES_MAX_DIGITS];
+        return jfes_add_to_stringstream(stream, jfes_integer_to_string_r(value->data.int_val, &buffer[0], JFES_MAX_DIGITS), 0);
+    }
 
     case jfes_type_double:
-        return jfes_add_to_stringstream(stream, jfes_double_to_string(value->data.double_val), 0);
+    {
+        char buffer[JFES_MAX_DIGITS];
+        return jfes_add_to_stringstream(stream, jfes_double_to_string_r(
+            value->data.double_val, &buffer[0], JFES_MAX_DIGITS, JFES_DOUBLE_PRECISION), 0);
+    }
 
     case jfes_type_string:
         jfes_add_to_stringstream(stream, "\"", 0);
