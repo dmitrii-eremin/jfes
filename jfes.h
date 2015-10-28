@@ -37,10 +37,10 @@ typedef enum jfes_status {
 } jfes_status_t;
 
 /** Memory allocator function type. */
-typedef void *(__cdecl *jfes_malloc_t)(jfes_size_t);
+typedef void *(*jfes_malloc_t)(jfes_size_t);
 
 /** Memory deallocator function type. */
-typedef void (__cdecl *jfes_free_t)(void*);
+typedef void (*jfes_free_t)(void*);
 
 /** JFES string type. */
 typedef struct jfes_string {
