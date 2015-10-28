@@ -192,7 +192,7 @@ static int jfes_is_null(const char *data, jfes_size_t length) {
         length = jfes_strlen(data);
     }
 
-    return jfes_memcmp(data, "null", length) == 0;
+    return length == jfes_strlen("null") && jfes_memcmp(data, "null", length) == 0;
 }
 
 /**
@@ -213,8 +213,8 @@ static int jfes_is_boolean(const char *data, jfes_size_t length) {
         length = jfes_strlen(data);
     }
 
-    return jfes_memcmp(data, "true", length) == 0 ||
-           jfes_memcmp(data, "false", length) == 0;
+    return length == jfes_strlen("true") && jfes_memcmp(data, "true", length) == 0 ||
+           length == jfes_strlen("false") && jfes_memcmp(data, "false", length) == 0;
 }
 
 /**
