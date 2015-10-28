@@ -7,11 +7,18 @@
 
 #include "jfes.h"
 
-/** Needs for the buffer in jfes_(int/double)_to_string(_r). */
+/** Needed for the buffer in jfes_(int/double)_to_string(_r). */
 #define JFES_MAX_DIGITS                 64
 
-/** Needs for the default precision in jfes_double_to_string(_r). */
+/** Needed for the default precision in jfes_double_to_string(_r). */
 #define JFES_DOUBLE_PRECISION           0.000000001
+
+/** Needed for the boolean-related functions */
+#define JFES_TRUE_VALUE                 "true"
+#define JFES_FALSE_VALUE                "false"
+
+/** Needed for the jfes_is_null function */
+#define JFES_NULL_VALUE                 "null"
 
 /** Integer types */
 typedef enum jfes_integer_type {
@@ -192,7 +199,7 @@ static int jfes_is_null(const char *data, jfes_size_t length) {
         length = jfes_strlen(data);
     }
 
-    return length == jfes_strlen("null") && jfes_memcmp(data, "null", length) == 0;
+    return length == jfes_strlen(JFES_NULL_VALUE) && jfes_memcmp(data, JFES_NULL_VALUE, length) == 0;
 }
 
 /**
@@ -213,8 +220,8 @@ static int jfes_is_boolean(const char *data, jfes_size_t length) {
         length = jfes_strlen(data);
     }
 
-    return length == jfes_strlen("true") && jfes_memcmp(data, "true", length) == 0 ||
-           length == jfes_strlen("false") && jfes_memcmp(data, "false", length) == 0;
+    return length == jfes_strlen(JFES_TRUE_VALUE) && jfes_memcmp(data, JFES_TRUE_VALUE, length) == 0 ||
+           length == jfes_strlen(JFES_FALSE_VALUE) && jfes_memcmp(data, JFES_FALSE_VALUE, length) == 0;
 }
 
 /**
@@ -323,13 +330,15 @@ static int jfes_is_double(const char *data, jfes_size_t length) {
     \return         1 if data == 'true'. Otherwise 0.
 */
 static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
-    jfes_size_t true_length = jfes_strlen("true");
-
-    if (!data || length < true_length) {
+    if (!data) {
         return 0;
     }
 
-    if (jfes_memcmp(data, "true", true_length) == 0) {
+    if (length == 0) {
+        length = jfes_strlen(data);
+    }
+
+    if (length == jfes_strlen(JFES_TRUE_VALUE) && jfes_memcmp(data, JFES_TRUE_VALUE, length) == 0) {
         return 1;
     }
 
@@ -521,10 +530,10 @@ static double jfes_string_to_double(const char *data, jfes_size_t length) {
 
     \param[in]      value               Value to stringify.
 
-    \return         String representation of given value.
+    \return         String representation of the given value.
 */
 char *jfes_boolean_to_string(int value) {
-    return value ? "true" : "false";
+    return value ? JFES_TRUE_VALUE : JFES_FALSE_VALUE;
 }
 
 /**
