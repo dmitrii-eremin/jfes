@@ -83,7 +83,7 @@ typedef struct jfes_config {
 
 /** JFES tokens data structure. */
 typedef struct jfes_tokens_data {
-    jfes_config_t           *config;            /**< JFES configuration. */
+    const jfes_config_t     *config;            /**< JFES configuration. */
 
     const char              *json_data;         /**< JSON string. */
     jfes_size_t             json_data_length;   /**< JSON string length. */
@@ -99,7 +99,7 @@ typedef struct jfes_parser {
     jfes_size_t             next_token;         /**< Next token to allocate. */
     int                     superior_token;     /**< Superior token node. */
 
-    jfes_config_t           *config;            /**< Pointer to jfes config. */
+    const jfes_config_t     *config;            /**< Pointer to jfes config. */
 } jfes_parser_t;
 
 
@@ -168,7 +168,7 @@ int jfes_status_is_bad(jfes_status_t status);
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_init_parser(jfes_parser_t *parser, jfes_config_t *config);
+jfes_status_t jfes_init_parser(jfes_parser_t *parser, const jfes_config_t *config);
 
 /**
     Resets all parser fields, except memory allocation functions.
@@ -205,7 +205,7 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
+jfes_status_t jfes_parse_to_value(const jfes_config_t *config, const char *json,
     jfes_size_t length, jfes_value_t *value);
 
 /**
@@ -297,7 +297,7 @@ jfes_value_t *jfes_create_object_value(const jfes_config_t *config);
 
     \return         Child value by the given key or JFES_NULL if nothing was found.
 */
-jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t key_length);
+jfes_value_t *jfes_get_child(const jfes_value_t *value, const char *key, jfes_size_t key_length);
 
 /**
     Finds child value if given parent value is object.
@@ -309,7 +309,7 @@ jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t k
 
     \return         Mapped child value with the given key or JFES_NULL if nothing was found.
 */
-jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, jfes_size_t key_length);
+jfes_object_map_t *jfes_get_mapped_child(const jfes_value_t *value, const char *key, jfes_size_t key_length);
 
 /**
     Adds a new item to the given array value.
@@ -320,7 +320,7 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_place_to_array(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
+jfes_status_t jfes_place_to_array(const jfes_config_t *config, const jfes_value_t *value, jfes_value_t *item);
 
 /**
     Adds a new item to the given array value in the given place.
@@ -332,7 +332,7 @@ jfes_status_t jfes_place_to_array(const jfes_config_t *config, jfes_value_t *val
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
+jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, const jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
 
 /**
     Removes an item with the given index from the array.
@@ -343,7 +343,7 @@ jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, jfes_value_t *
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_remove_from_array(const jfes_config_t *config, jfes_value_t *value, jfes_size_t index);
+jfes_status_t jfes_remove_from_array(const jfes_config_t *config, const jfes_value_t *value, jfes_size_t index);
 
 /**
     Adds a new item to the given object.
@@ -357,7 +357,7 @@ jfes_status_t jfes_remove_from_array(const jfes_config_t *config, jfes_value_t *
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_set_object_property(const jfes_config_t *config, jfes_value_t *value, 
+jfes_status_t jfes_set_object_property(const jfes_config_t *config, const jfes_value_t *value, 
     jfes_value_t *item, const char *key, jfes_size_t key_length);
 
 /**
@@ -371,7 +371,7 @@ jfes_status_t jfes_set_object_property(const jfes_config_t *config, jfes_value_t
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_remove_object_property(const jfes_config_t *config, jfes_value_t *value, 
+jfes_status_t jfes_remove_object_property(const jfes_config_t *config, const jfes_value_t *value, 
     const char *key, jfes_size_t key_length);
 
 /**
