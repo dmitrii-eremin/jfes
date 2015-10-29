@@ -1128,21 +1128,21 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
         break;
 
     case jfes_type_array:
-        value->data.array_val = (jfes_array_t*)jfes_malloc(sizeof(jfes_array_t));
+        value->data.array_val = jfes_malloc(sizeof(jfes_array_t));
         if (!value->data.array_val) {
             return jfes_no_memory;
         }
 
         if (token->size > 0) {
             value->data.array_val->count = token->size;
-            value->data.array_val->items = (jfes_value_t**)jfes_malloc(token->size * sizeof(jfes_value_t*));
+            value->data.array_val->items = jfes_malloc(token->size * sizeof(jfes_value_t*));
             if (!value->data.array_val->items) {
                 jfes_free(value->data.array_val);
                 return jfes_no_memory;
             }
 
             for (jfes_size_t i = 0; i < token->size; i++) {
-                jfes_value_t *item = (jfes_value_t*)jfes_malloc(sizeof(jfes_value_t));
+                jfes_value_t *item = jfes_malloc(sizeof(jfes_value_t));
                 if (!item) {
                     jfes_free(value->data.array_val->items);
                     jfes_free(value->data.array_val);
@@ -1162,21 +1162,21 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
         break;
 
     case jfes_type_object:
-        value->data.object_val = (jfes_object_t*)jfes_malloc(sizeof(jfes_object_t));
+        value->data.object_val = jfes_malloc(sizeof(jfes_object_t));
         if (!value->data.object_val) {
             return jfes_no_memory;
         }
 
         if (token->size > 0) {
             value->data.object_val->count = token->size;
-            value->data.object_val->items = (jfes_object_map_t**)jfes_malloc(token->size * sizeof(jfes_object_map_t*));
+            value->data.object_val->items = jfes_malloc(token->size * sizeof(jfes_object_map_t*));
             if (!value->data.object_val->items) {
                 jfes_free(value->data.object_val);
                 return jfes_no_memory;
             }
 
             for (jfes_size_t i = 0; i < token->size; i++) {
-                jfes_object_map_t *item = (jfes_object_map_t*)jfes_malloc(sizeof(jfes_object_map_t));
+                jfes_object_map_t *item = jfes_malloc(sizeof(jfes_object_map_t));
                 if (!item) {
                     jfes_free(value->data.object_val->items);
                     jfes_free(value->data.object_val);
@@ -1191,7 +1191,7 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
                 jfes_create_string(tokens_data->config, &item->key, 
                     tokens_data->json_data + key_token->start, key_length);
 
-                item->value = (jfes_value_t*)jfes_malloc(sizeof(jfes_value_t));
+                item->value = jfes_malloc(sizeof(jfes_value_t));
 
                 jfes_status_t status = jfes_create_node(tokens_data, item->value);
                 if (jfes_status_is_bad(status)) {
@@ -1229,7 +1229,7 @@ jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     while (status == jfes_no_memory && tokens_count <= JFES_MAX_TOKENS_COUNT) {
         jfes_reset_parser(&parser);
 
-        tokens = (jfes_token_t*)parser.config->jfes_malloc(tokens_count * sizeof(jfes_token_t));
+        tokens = parser.config->jfes_malloc(tokens_count * sizeof(jfes_token_t));
         if (!tokens) {
             return jfes_no_memory;
         }
@@ -1405,7 +1405,7 @@ jfes_value_t *jfes_create_array_value(const jfes_config_t *config) {
 
     result->type = jfes_type_array;
 
-    result->data.array_val = (jfes_array_t*)config->jfes_malloc(sizeof(jfes_array_t));
+    result->data.array_val = config->jfes_malloc(sizeof(jfes_array_t));
     if (!result->data.array_val) {
         config->jfes_free(result);
         return JFES_NULL;
@@ -1427,7 +1427,7 @@ jfes_value_t *jfes_create_object_value(const jfes_config_t *config) {
     }
     result->type = jfes_type_object;
 
-    result->data.object_val = (jfes_object_t*)config->jfes_malloc(sizeof(jfes_object_t));
+    result->data.object_val = config->jfes_malloc(sizeof(jfes_object_t));
     if (!result->data.object_val) {
         config->jfes_free(result);
         return JFES_NULL;
