@@ -147,7 +147,7 @@ struct jfes_value {
 
     \param[in]      status              Status variable.
 
-    \return Zero, if status not equals jfes_success. Otherwise anything else.
+    \return Zero status is not jfes_success. Otherwise anything else.
 */
 int jfes_status_is_good(jfes_status_t status);
 
@@ -156,7 +156,7 @@ int jfes_status_is_good(jfes_status_t status);
 
     \param[in]      status              Status variable.
 
-    \return Zero, if status equals jfes_success. Otherwise anything else.
+    \return Zero if status is jfes_success. Otherwise anything else.
 */
 int jfes_status_is_bad(jfes_status_t status);
 
@@ -180,7 +180,7 @@ jfes_status_t jfes_init_parser(jfes_parser_t *parser, jfes_config_t *config);
 jfes_status_t jfes_reset_parser(jfes_parser_t *parser);
 
 /**
-    Run JSON parser. It parses a JSON data string into and 
+    Runs JSON parser. It parses a JSON data string into an 
     array of tokens, each describing a single JSON object.
 
     \param[in]      parser              Pointer to the jfes_parser_t object.
@@ -196,12 +196,12 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
     jfes_size_t length, jfes_token_t *tokens, jfes_size_t *max_tokens_count);
 
 /**
-    Run JSON parser and fills jfes_value_t object.
+    Runs JSON parser and fills jfes_value_t object.
 
     \param[in]      config              JFES configuration.
     \param[in]      json                JSON data string.
     \param[in]      length              JSON data length.
-    \param[out]     value               Output value;
+    \param[out]     value               Output value.
 
     \return         jfes_success if everything is OK.
 */
@@ -209,111 +209,110 @@ jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     jfes_size_t length, jfes_value_t *value);
 
 /**
-    Free all resources, captured by object.
+    Frees all resources captured by the object.
 
     \param[in]      config              JFES configuration.
     \param[in,out]  value               Object to free.
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value);
+jfes_status_t jfes_free_value(const jfes_config_t *config, jfes_value_t *value);
 
 /**
-    Allocates new null value.
+    Allocates a new null value.
 
     \param[in]      config              JFES configuration.
 
-    \return         Allocated JFES value or JFES_NULL, if something went wrong.
+    \return         Allocated JFES value or JFES_NULL if something went wrong.
 */
-jfes_value_t *jfes_create_null_value(jfes_config_t *config);
+jfes_value_t *jfes_create_null_value(const jfes_config_t *config);
 
 /**
-    Allocates new boolean value.
-
-    \param[in]      config              JFES configuration.
-    \param[in]      value               Value to pass it to the object.
-
-    \return         Allocated JFES value or JFES_NULL, if something went wrong.
-*/
-jfes_value_t *jfes_create_boolean_value(jfes_config_t *config, int value);
-
-/**
-    Allocates new integer value.
+    Allocates a new boolean value.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Value to pass it to the object.
 
-    \return         Allocated JFES value or JFES_NULL, if something went wrong.
+    \return         Allocated JFES value or JFES_NULL if something went wrong.
 */
-jfes_value_t *jfes_create_integer_value(jfes_config_t *config, int value);
+jfes_value_t *jfes_create_boolean_value(const jfes_config_t *config, int value);
 
 /**
-    Allocates new double value.
+    Allocates a new integer value.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Value to pass it to the object.
 
-    \return         Allocated JFES value or JFES_NULL, if something went wrong.
+    \return         Allocated JFES value or JFES_NULL if something went wrong.
 */
-jfes_value_t *jfes_create_double_value(jfes_config_t *config, double value);
+jfes_value_t *jfes_create_integer_value(const jfes_config_t *config, int value);
 
 /**
-    Allocates new string value.
+    Allocates a new double value.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Value to pass it to the object.
-    \param[in]      length              Optional. String length. You can pass 0,
-                                        if string is zero-terminated.
 
-    \return         Allocated JFES value or JFES_NULL, if something went wrong.
+    \return         Allocated JFES value or JFES_NULL if something went wrong.
 */
-jfes_value_t *jfes_create_string_value(jfes_config_t *config, const char *value, jfes_size_t length);
+jfes_value_t *jfes_create_double_value(const jfes_config_t *config, double value);
 
 /**
-    Allocates new array value.
+    Allocates a new string value.
+
+    \param[in]      config              JFES configuration.
+    \param[in]      value               Value to pass it to the object.
+    \param[in]      length              Optional. String length. You can pass 0
+                                        if the string is zero-terminated.
+
+    \return         Allocated JFES value or JFES_NULL if something went wrong.
+*/
+jfes_value_t *jfes_create_string_value(const jfes_config_t *config, const char *value, jfes_size_t length);
+
+/**
+    Allocates a new array value.
 
     \param[in]      config              JFES configuration.
 
-    \return         Allocated JFES value or JFES_NULL, if something went wrong.
+    \return         Allocated JFES value or JFES_NULL if something went wrong.
 */
-jfes_value_t *jfes_create_array_value(jfes_config_t *config);
+jfes_value_t *jfes_create_array_value(const jfes_config_t *config);
 
 /**
-    Allocates new object value.
+    Allocates a new object value.
 
     \param[in]      config              JFES configuration.
 
-    \return         Allocated JFES value or JFES_NULL, if something went wrong.
+    \return         Allocated JFES value or JFES_NULL if something went wrong.
 */
-jfes_value_t *jfes_create_object_value(jfes_config_t *config);
-
+jfes_value_t *jfes_create_object_value(const jfes_config_t *config);
 
 /**
-    Finds child value, if given parent value is object.
+    Finds child value if given parent value is object.
 
     \param[in]      value               Parent object value.
     \param[in]      key                 Child key.
-    \param[in]      key_length          Optional. Child key length. You can pass 0,
-                                        if key string is zero-terminated.
+    \param[in]      key_length          Optional. Child key length. You can pass 0
+                                        if the key string is zero-terminated.
 
-    \return         Child value by given key or JFES_NULL, if nothing was found.
+    \return         Child value by the given key or JFES_NULL if nothing was found.
 */
 jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t key_length);
 
 /**
-    Finds child value, if given parent value is object.
+    Finds child value if given parent value is object.
 
     \param[in]      value               Parent object value.
     \param[in]      key                 Child key.
-    \param[in]      key_length          Optional. Child key length. You can pass 0,
-    if key string is zero-terminated.
+    \param[in]      key_length          Optional. Child key length. You can pass 0
+                                        if the key string is zero-terminated.
 
-    \return         Mapped child value with given key or JFES_NULL, if nothing was found.
+    \return         Mapped child value with the given key or JFES_NULL if nothing was found.
 */
 jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, jfes_size_t key_length);
 
 /**
-    Adds new item to the given array value.
+    Adds a new item to the given array value.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Array value.
@@ -321,10 +320,10 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
+jfes_status_t jfes_place_to_array(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item);
 
 /**
-    Adds new item to the given array value on the given place.
+    Adds a new item to the given array value in the given place.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Array value.
@@ -333,10 +332,10 @@ jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jf
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
+jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at);
 
 /**
-    Removes an item with fiven index from array.
+    Removes an item with the given index from the array.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Array value.
@@ -344,39 +343,39 @@ jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value,
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value, jfes_size_t index);
+jfes_status_t jfes_remove_from_array(const jfes_config_t *config, jfes_value_t *value, jfes_size_t index);
 
 /**
-    Adds new item to the given object.
+    Adds a new item to the given object.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Array value.
     \param[in]      item                Item to add. Must be allocated on heap.
     \param[in]      key                 Child key.
-    \param[in]      key_length          Optional. Child key length. You can pass 0,
-                                        if key string is zero-terminated.
+    \param[in]      key_length          Optional. Child key length. You can pass 0
+                                        if the key string is zero-terminated.
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *value, 
+jfes_status_t jfes_set_object_property(const jfes_config_t *config, jfes_value_t *value, 
     jfes_value_t *item, const char *key, jfes_size_t key_length);
 
 /**
-    Removes object child with the given key.
+    Removes a child object with the given key.
 
     \param[in]      config              JFES configuration.
     \param[in]      value               Array value.
     \param[in]      key                 Child key.
-    \param[in]      key_length          Optional. Child key length. You can pass 0,
-    if key string is zero-terminated.
+    \param[in]      key_length          Optional. Child key length. You can pass 0
+                                        if the key string is zero-terminated.
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *value, 
+jfes_status_t jfes_remove_object_property(const jfes_config_t *config, jfes_value_t *value, 
     const char *key, jfes_size_t key_length);
 
 /**
-    Dumps JFES value to memory.
+    Dumps JFES value to the memory.
 
     \param[in]      value               JFES value to dump.
     \param[out]     data                Allocated memory to store.
@@ -385,6 +384,6 @@ jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *v
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_value_to_string(jfes_value_t *value, char *data, jfes_size_t *max_size, int beautiful);
+jfes_status_t jfes_value_to_string(const jfes_value_t *value, char *data, jfes_size_t *max_size, int beautiful);
 
 #endif
