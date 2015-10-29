@@ -78,13 +78,13 @@ static void *jfes_memcpy(void *dst, const void *src, jfes_size_t count) {
 }
 
 /**
-    This functions checks configuration object and its members.
+    Checks configuration object and its members.
 
     \param[in]      config              Object to be checked.
 
-    \return         Zero, if something wrong. Anything otherwise.
+    \return         Zero if something wrong. Anything otherwise.
 */
-static int jfes_check_configuration(jfes_config_t *config) {
+static int jfes_check_configuration(const jfes_config_t *config) {
     return config && config->jfes_malloc && config->jfes_free;
 }
 
@@ -97,14 +97,14 @@ static int jfes_check_configuration(jfes_config_t *config) {
 
     \return         jfes_success if everything is OK.
 */
-static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *str, jfes_size_t size) {
+static jfes_status_t jfes_allocate_string(const jfes_config_t *config, jfes_string_t *str, jfes_size_t size) {
     if (!jfes_check_configuration(config) || !str || size == 0) {
         return jfes_invalid_arguments;
     }
 
     jfes_status_t status = jfes_success;
 
-    str->data = (char*)config->jfes_malloc(size);
+    str->data = config->jfes_malloc(size);
     if (!str->data) {
         status = jfes_no_memory;
         size = 0;
@@ -123,7 +123,7 @@ static jfes_status_t jfes_allocate_string(jfes_config_t *config, jfes_string_t *
 
     \return         jfes_success if everything is OK.
 */
-static jfes_status_t jfes_free_string(jfes_config_t *config, jfes_string_t *str) {
+static jfes_status_t jfes_free_string(const jfes_config_t *config, jfes_string_t *str) {
     if (!jfes_check_configuration(config) || !str) {
         return jfes_invalid_arguments;
     }
@@ -147,20 +147,18 @@ static jfes_status_t jfes_free_string(jfes_config_t *config, jfes_string_t *str)
 
     \return         jfes_success if everything is OK.
 */
-static jfes_status_t jfes_create_string(jfes_config_t *config, jfes_string_t *str, const char *string, jfes_size_t size) {
+static jfes_status_t jfes_create_string(const jfes_config_t *config, jfes_string_t *str, const char *string, jfes_size_t size) {
     if (!jfes_check_configuration(config) || !str || !string || size == 0) {
         return jfes_invalid_arguments;
     }
 
-    jfes_status_t status = jfes_allocate_string(config, str, size + 1);
-    if (jfes_status_is_bad(status)) {
-        return status;
+    const jfes_status_t status = jfes_allocate_string(config, str, size + 1);
+    if (jfes_status_is_good(status)) {
+        jfes_memcpy(str->data, string, size);
+        str->data[size] = '\0';
     }
 
-    jfes_memcpy(str->data, string, size);
-    str->data[size] = '\0';
-
-    return jfes_success;
+    return status;
 }
 
 /**
@@ -168,7 +166,7 @@ static jfes_status_t jfes_create_string(jfes_config_t *config, jfes_string_t *st
 
     \param[in]      data                Null-terminated string.
 
-    \return         Length if the null-terminated string.
+    \return         Length if the string is null-terminated.
 */
 static jfes_size_t jfes_strlen(const char *data) {
     if (!data) {
@@ -182,7 +180,7 @@ static jfes_size_t jfes_strlen(const char *data) {
 }
 
 /**
-    Analyzes input string on the subject of whether it is null.
+    Analyzes input string on the subject of whether it's equal to "null".
 
     \param[in]      data                Input string.
     \param[in]      length              Optional. String length. You can pass zero
@@ -543,7 +541,7 @@ char *jfes_boolean_to_string(int value) {
     \param[out]     output              Output buffer to store result.
     \param[in]      output_size         Maximal size of output buffer.
 
-    \return         String representation of given value.
+    \return         String representation of the given value.
 
     \warning        output_size must be greater than 1, because the output will be
     null-terminated (if `output_size == 1`, then this single byte will be '\0').
@@ -592,7 +590,7 @@ char *jfes_integer_to_string_r(int value, char *output, jfes_size_t output_size)
 
     \param[in]      value               Value to stringify.
 
-    \return         String representation of given value.
+    \return         String representation of the given value.
 */
 char *jfes_integer_to_string(int value) {
     static char buf[JFES_MAX_DIGITS + 1];
@@ -607,7 +605,7 @@ char *jfes_integer_to_string(int value) {
     \param[in]      output_size         Maximal size of output buffer.
     \param[in]      precision_eps       Double precision (like 0.00001).
 
-    \return         String representation of given value.
+    \return         String representation of the given value.
 
     \warning        output_size must be greater than 1, because the output will be
     null-terminated (if `output_size == 1`, then this single byte will be '\0').
@@ -657,7 +655,7 @@ char *jfes_double_to_string_r(double value, char *output, jfes_size_t output_siz
 
     \param[in]      value               Value to stringify.
 
-    \return         String representation of given value.
+    \return         String representation of the given value.
 */
 char *jfes_double_to_string(double value) {
     static char buf[JFES_MAX_DIGITS];
@@ -667,11 +665,11 @@ char *jfes_double_to_string(double value) {
 }
 
 /**
-    Initialize jfes_stringstream object.
+    Initializes jfes_stringstream object.
 
     \param[out]     stream              Object to initialize.
     \param[in]      data                Pointer to the memory.
-    \param[in]      max_size            Size of allocated memory.
+    \param[in]      max_size            Size of the allocated memory.
 
     \return         jfes_success if everything is OK.
 */
@@ -731,7 +729,7 @@ jfes_status_t jfes_add_to_stringstream(jfes_stringstream_t *stream, char *data, 
     \param[in, out] tokens              Tokens array.
     \param[in]      max_tokens          Maximal tokens count.
 
-    \return         Pointer to an allocated token from token pool.
+    \return         Pointer to the allocated token from the token pool.
 */
 static jfes_token_t *jfes_allocate_token(jfes_parser_t *parser, jfes_token_t *tokens, jfes_size_t max_tokens) {
     if (!parser || !tokens || max_tokens == 0 || parser->next_token >= max_tokens) {
@@ -803,17 +801,16 @@ static void jfes_fill_token(jfes_token_t *token, jfes_token_type_t type, int sta
     \return         jfes_success if everything is OK.
 */
 static jfes_status_t jfes_parse_primitive(jfes_parser_t *parser, const char *json, jfes_size_t length,
-    jfes_token_t *tokens, jfes_size_t max_tokens_count) {
+        jfes_token_t *tokens, jfes_size_t max_tokens_count) {
     if (!parser || !json || length == 0 || !tokens || max_tokens_count == 0) {
         return jfes_invalid_arguments;
     }
 
     int found = 0;
 
-    char c = '\0';
     jfes_size_t start = parser->pos;
     while (length && json[parser->pos] != '\0') {
-        c = json[parser->pos];
+        char c = json[parser->pos];
         if (c == '\t' || c == '\n' || c == '\r' || c == ' ' ||
             c == ',' || c == ']' || c == '}'
 #ifndef JFES_STRICT
@@ -861,7 +858,7 @@ static jfes_status_t jfes_parse_primitive(jfes_parser_t *parser, const char *jso
     \return         jfes_success if everything is OK.
 */
 static jfes_status_t jfes_parse_string(jfes_parser_t *parser, const char *json, jfes_size_t length,
-    jfes_token_t *tokens, jfes_size_t max_tokens_count) {
+        jfes_token_t *tokens, jfes_size_t max_tokens_count) {
     if (!parser || !json || length == 0 || !tokens || max_tokens_count == 0) {
         return jfes_invalid_arguments;
     }
@@ -942,8 +939,7 @@ jfes_status_t jfes_reset_parser(jfes_parser_t *parser) {
 }
 
 jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
-    jfes_size_t length, jfes_token_t *tokens, jfes_size_t *max_tokens_count) {
-
+        jfes_size_t length, jfes_token_t *tokens, jfes_size_t *max_tokens_count) {
     if (!parser || !json || length == 0 || !tokens || !max_tokens_count || *max_tokens_count == 0) {
         return jfes_invalid_arguments;
     }
@@ -1083,7 +1079,7 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
 }
 
 /**
-    Creates jfes value node from tokens sequence.
+    Creates jfes value node from the tokens sequence.
 
     \param[in]      tokens_data         Pointer to the jfes_tokens_data_t object.
     \param[out]     value               Pointer to the value to create node.
@@ -1099,13 +1095,13 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
         return jfes_invalid_arguments;
     }
 
-    jfes_malloc_t jfes_malloc   = tokens_data->config->jfes_malloc;
-    jfes_free_t   jfes_free     = tokens_data->config->jfes_free;
+    jfes_malloc_t jfes_malloc = tokens_data->config->jfes_malloc;
+    jfes_free_t   jfes_free   = tokens_data->config->jfes_free;
 
     jfes_token_t *token = &tokens_data->tokens[tokens_data->current_token];
     tokens_data->current_token++;
     
-    value->type = (jfes_value_type_t)token->type;
+    value->type = token->type;
 
     switch (token->type) {
     case jfes_type_null:
@@ -1145,8 +1141,6 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
                 return jfes_no_memory;
             }
 
-            jfes_status_t status = jfes_success;
-
             for (jfes_size_t i = 0; i < token->size; i++) {
                 jfes_value_t *item = (jfes_value_t*)jfes_malloc(sizeof(jfes_value_t));
                 if (!item) {
@@ -1156,7 +1150,7 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
                 }
                 value->data.array_val->items[i] = item;
 
-                status = jfes_create_node(tokens_data, item);
+                jfes_status_t status = jfes_create_node(tokens_data, item);
                 if (jfes_status_is_bad(status)) {
                     value->data.array_val->count = i + 1;
 
@@ -1181,8 +1175,6 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
                 return jfes_no_memory;
             }
 
-            jfes_status_t status = jfes_success;
-
             for (jfes_size_t i = 0; i < token->size; i++) {
                 jfes_object_map_t *item = (jfes_object_map_t*)jfes_malloc(sizeof(jfes_object_map_t));
                 if (!item) {
@@ -1201,7 +1193,7 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
 
                 item->value = (jfes_value_t*)jfes_malloc(sizeof(jfes_value_t));
 
-                status = jfes_create_node(tokens_data, item->value);
+                jfes_status_t status = jfes_create_node(tokens_data, item->value);
                 if (jfes_status_is_bad(status)) {
                     value->data.object_val->count = i + 1;
 
@@ -1219,10 +1211,11 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
 }
 
 jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
-    jfes_size_t length, jfes_value_t *value) {
+        jfes_size_t length, jfes_value_t *value) {
     if (!jfes_check_configuration(config) || !json || length == 0 || !value) {
         return jfes_invalid_arguments;
     }
+
     jfes_parser_t parser;
     jfes_status_t status = jfes_init_parser(&parser, config);
     if (jfes_status_is_bad(status)) {
@@ -1266,19 +1259,19 @@ jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
     tokens_data.tokens_count = tokens_count;
     tokens_data.current_token = 0;
 
-    status = jfes_create_node(&tokens_data, value);
+    status = jfes_create_node(&tokens_data, value); /* what if no success here? */
 
     parser.config->jfes_free(tokens);
     return jfes_success;
 }
 
-jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
+jfes_status_t jfes_free_value(const jfes_config_t *config, jfes_value_t *value) {
     if (!jfes_check_configuration(config) || !value) {
         return jfes_invalid_arguments;
     }
 
     if (value->type == jfes_type_array) {
-        if (value->data.array_val->count > 0) {
+        if (value->data.array_val && value->data.array_val->count > 0) {
             for (jfes_size_t i = 0; i < value->data.array_val->count; i++) {
                 jfes_value_t *item = value->data.array_val->items[i];
                 jfes_free_value(config, item);
@@ -1291,7 +1284,7 @@ jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
         config->jfes_free(value->data.array_val);
     }
     else if (value->type == jfes_type_object) {
-        if (value->data.object_val->count > 0) {
+        if (value->data.object_val && value->data.object_val->count > 0) {
             for (jfes_size_t i = 0; i < value->data.object_val->count; i++) {
                 jfes_object_map_t *object_map = value->data.object_val->items[i];
 
@@ -1317,12 +1310,12 @@ jfes_status_t jfes_free_value(jfes_config_t *config, jfes_value_t *value) {
     return jfes_success;
 }
 
-jfes_value_t *jfes_create_null_value(jfes_config_t *config) {
+jfes_value_t *jfes_create_null_value(const jfes_config_t *config) {
     if (!config) {
         return JFES_NULL;
     }
 
-    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    jfes_value_t *result = config->jfes_malloc(sizeof(jfes_value_t));
     if (!result) {
         return JFES_NULL;
     }
@@ -1331,12 +1324,12 @@ jfes_value_t *jfes_create_null_value(jfes_config_t *config) {
     return result;
 }
 
-jfes_value_t *jfes_create_boolean_value(jfes_config_t *config, int value) {
+jfes_value_t *jfes_create_boolean_value(const jfes_config_t *config, int value) {
     if (!config) {
         return JFES_NULL;
     }
 
-    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    jfes_value_t *result = config->jfes_malloc(sizeof(jfes_value_t));
     if (!result) {
         return JFES_NULL;
     }
@@ -1346,12 +1339,12 @@ jfes_value_t *jfes_create_boolean_value(jfes_config_t *config, int value) {
     return result;
 }
 
-jfes_value_t *jfes_create_integer_value(jfes_config_t *config, int value) {
+jfes_value_t *jfes_create_integer_value(const jfes_config_t *config, int value) {
     if (!config) {
         return JFES_NULL;
     }
 
-    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    jfes_value_t *result = config->jfes_malloc(sizeof(jfes_value_t));
     if (!result) {
         return JFES_NULL;
     }
@@ -1361,12 +1354,12 @@ jfes_value_t *jfes_create_integer_value(jfes_config_t *config, int value) {
     return result;
 }
 
-jfes_value_t *jfes_create_double_value(jfes_config_t *config, double value) {
+jfes_value_t *jfes_create_double_value(const jfes_config_t *config, double value) {
     if (!config) {
         return JFES_NULL;
     }
 
-    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    jfes_value_t *result = config->jfes_malloc(sizeof(jfes_value_t));
     if (!result) {
         return JFES_NULL;
     }
@@ -1376,7 +1369,7 @@ jfes_value_t *jfes_create_double_value(jfes_config_t *config, double value) {
     return result;
 }
 
-jfes_value_t *jfes_create_string_value(jfes_config_t *config, const char *value, jfes_size_t length) {
+jfes_value_t *jfes_create_string_value(const jfes_config_t *config, const char *value, jfes_size_t length) {
     if (!jfes_check_configuration(config) || !value) {
         return JFES_NULL;
     }
@@ -1385,7 +1378,7 @@ jfes_value_t *jfes_create_string_value(jfes_config_t *config, const char *value,
         length = jfes_strlen(value);
     }
 
-    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    jfes_value_t *result = config->jfes_malloc(sizeof(jfes_value_t));
     if (!result) {
         return JFES_NULL;
     }
@@ -1400,12 +1393,12 @@ jfes_value_t *jfes_create_string_value(jfes_config_t *config, const char *value,
     return result;
 }
 
-jfes_value_t *jfes_create_array_value(jfes_config_t *config) {
+jfes_value_t *jfes_create_array_value(const jfes_config_t *config) {
     if (!config) {
         return JFES_NULL;
     }
 
-    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    jfes_value_t *result = config->jfes_malloc(sizeof(jfes_value_t));
     if (!result) {
         return JFES_NULL;
     }
@@ -1423,12 +1416,12 @@ jfes_value_t *jfes_create_array_value(jfes_config_t *config) {
     return result;
 }
 
-jfes_value_t *jfes_create_object_value(jfes_config_t *config) {
+jfes_value_t *jfes_create_object_value(const jfes_config_t *config) {
     if (!config) {
         return JFES_NULL;
     }
 
-    jfes_value_t *result = (jfes_value_t*)config->jfes_malloc(sizeof(jfes_value_t));
+    jfes_value_t *result = config->jfes_malloc(sizeof(jfes_value_t));
     if (!result) {
         return JFES_NULL;
     }
@@ -1465,18 +1458,16 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
 
     for (jfes_size_t i = 0; i < value->data.object_val->count; i++) {
         jfes_object_map_t *item = value->data.object_val->items[i];
-        if ((item->key.size - 1) != key_length ||
-            jfes_memcmp(item->key.data, key, key_length) != 0) {
-            continue;
+        if (item && (item->key.size - 1) == key_length &&
+                jfes_memcmp(item->key.data, key, key_length) == 0) {
+            return item;
         }
-
-        return item;
     }
 
     return JFES_NULL;
 }
 
-jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
+jfes_status_t jfes_place_to_array(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
     if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
@@ -1484,7 +1475,7 @@ jfes_status_t jfes_place_to_array(jfes_config_t *config, jfes_value_t *value, jf
     return jfes_place_to_array_at(config, value, item, value->data.array_val->count);
 }
 
-jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
+jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
     if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
@@ -1493,7 +1484,7 @@ jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value,
         place_at = value->data.array_val->count;
     }
 
-    jfes_value_t **items_array = (jfes_value_t**)config->jfes_malloc((value->data.array_val->count + 1) * sizeof(jfes_value_t*));
+    jfes_value_t **items_array = config->jfes_malloc((value->data.array_val->count + 1) * sizeof(jfes_value_t*));
     if (!items_array) {
         return jfes_no_memory;
     }
@@ -1515,7 +1506,7 @@ jfes_status_t jfes_place_to_array_at(jfes_config_t *config, jfes_value_t *value,
     return jfes_success;
 }
 
-jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value, jfes_size_t index) {
+jfes_status_t jfes_remove_from_array(const jfes_config_t *config, jfes_value_t *value, jfes_size_t index) {
     if (!jfes_check_configuration(config) || !value || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
@@ -1536,8 +1527,8 @@ jfes_status_t jfes_remove_from_array(jfes_config_t *config, jfes_value_t *value,
     return jfes_success;
 }
 
-jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *value,
-    jfes_value_t *item, const char *key, jfes_size_t key_length) {
+jfes_status_t jfes_set_object_property(const jfes_config_t *config, jfes_value_t *value,
+        jfes_value_t *item, const char *key, jfes_size_t key_length) {
     if (!jfes_check_configuration(config) || !value || !item || !key || value->type != jfes_type_object) {
         return jfes_invalid_arguments;
     }
@@ -1552,7 +1543,7 @@ jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *valu
         config->jfes_free(object_map->value);
     }
     else {
-        jfes_object_map_t **items_map = (jfes_object_map_t**)config->jfes_malloc((value->data.object_val->count + 1) * sizeof(jfes_object_map_t*));
+        jfes_object_map_t **items_map = config->jfes_malloc((value->data.object_val->count + 1) * sizeof(jfes_object_map_t*));
         if (!items_map) {
             return jfes_no_memory;
         }
@@ -1561,7 +1552,7 @@ jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *valu
             items_map[i] = value->data.object_val->items[i];
         }
 
-        items_map[value->data.object_val->count] = (jfes_object_map_t*)config->jfes_malloc(sizeof(jfes_object_map_t));
+        items_map[value->data.object_val->count] = config->jfes_malloc(sizeof(jfes_object_map_t));
         if (!items_map[value->data.object_val->count]) {
             config->jfes_free(items_map);
             return jfes_no_memory;
@@ -1584,8 +1575,8 @@ jfes_status_t jfes_set_object_property(jfes_config_t *config, jfes_value_t *valu
     return jfes_success;
 }
 
-jfes_status_t jfes_remove_object_property(jfes_config_t *config, jfes_value_t *value,
-    const char *key, jfes_size_t key_length) {
+jfes_status_t jfes_remove_object_property(const jfes_config_t *config, jfes_value_t *value,
+        const char *key, jfes_size_t key_length) {
     if (!jfes_check_configuration(config) || !value || value->type != jfes_type_object || !key) {
         return jfes_invalid_arguments;
     }
@@ -1638,7 +1629,7 @@ Dumps JFES value to memory.
 
 \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream,
+static jfes_status_t jfes_value_to_stream_helper(const jfes_value_t *value, jfes_stringstream_t *stream,
     int beautiful, jfes_size_t indent, const char *indent_string);
 
 /**
@@ -1653,8 +1644,8 @@ jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_array_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream, 
-    int beautiful, jfes_size_t indent, const char *indent_string) {
+static jfes_status_t jfes_array_value_to_stream_helper(const jfes_value_t *value, jfes_stringstream_t *stream, 
+        int beautiful, jfes_size_t indent, const char *indent_string) {
     if (!value || !stream || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
@@ -1730,8 +1721,8 @@ jfes_status_t jfes_array_value_to_stream_helper(jfes_value_t *value, jfes_string
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_object_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream,
-    int beautiful, jfes_size_t indent, const char *indent_string) {
+static jfes_status_t jfes_object_value_to_stream_helper(const jfes_value_t *value, jfes_stringstream_t *stream,
+        int beautiful, jfes_size_t indent, const char *indent_string) {
     if (!value || !stream || value->type != jfes_type_object) {
         return jfes_invalid_arguments;
     }
@@ -1779,8 +1770,8 @@ jfes_status_t jfes_object_value_to_stream_helper(jfes_value_t *value, jfes_strin
     return jfes_add_to_stringstream(stream, "}", 0);
 }
 
-jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream_t *stream, 
-                                        int beautiful, jfes_size_t indent, const char *indent_string) {
+static jfes_status_t jfes_value_to_stream_helper(const jfes_value_t *value, jfes_stringstream_t *stream, 
+        int beautiful, jfes_size_t indent, const char *indent_string) {
     if (!value || !stream) {
         return jfes_invalid_arguments;
     }
@@ -1831,11 +1822,11 @@ jfes_status_t jfes_value_to_stream_helper(jfes_value_t *value, jfes_stringstream
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_value_to_stream(jfes_value_t *value, jfes_stringstream_t *stream, int beautiful) {
+static jfes_status_t jfes_value_to_stream(const jfes_value_t *value, jfes_stringstream_t *stream, int beautiful) {
     return jfes_value_to_stream_helper(value, stream, beautiful, 0, "    ");
 }
 
-jfes_status_t jfes_value_to_string(jfes_value_t *value, char *data, jfes_size_t *max_size, int beautiful) {
+jfes_status_t jfes_value_to_string(const jfes_value_t *value, char *data, jfes_size_t *max_size, int beautiful) {
     if (!data || !max_size || *max_size == 0) {
         return jfes_invalid_arguments;
     }
