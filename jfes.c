@@ -916,7 +916,7 @@ int jfes_status_is_bad(jfes_status_t status) {
     return !jfes_status_is_good(status);
 }
 
-jfes_status_t jfes_init_parser(jfes_parser_t *parser, jfes_config_t *config) {
+jfes_status_t jfes_init_parser(jfes_parser_t *parser, const jfes_config_t *config) {
     if (!parser || !config) {
         return jfes_invalid_arguments;
     }
@@ -1210,7 +1210,7 @@ jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *va
     return jfes_success;
 }
 
-jfes_status_t jfes_parse_to_value(jfes_config_t *config, const char *json,
+jfes_status_t jfes_parse_to_value(const jfes_config_t *config, const char *json,
         jfes_size_t length, jfes_value_t *value) {
     if (!jfes_check_configuration(config) || !json || length == 0 || !value) {
         return jfes_invalid_arguments;
@@ -1438,7 +1438,7 @@ jfes_value_t *jfes_create_object_value(const jfes_config_t *config) {
     return result;
 }
 
-jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t key_length) {
+jfes_value_t *jfes_get_child(const jfes_value_t *value, const char *key, jfes_size_t key_length) {
     jfes_object_map_t *mapped_item = jfes_get_mapped_child(value, key, key_length);
     if (mapped_item) {
         return mapped_item->value;
@@ -1447,7 +1447,7 @@ jfes_value_t *jfes_get_child(jfes_value_t *value, const char *key, jfes_size_t k
     return JFES_NULL;
 }
 
-jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, jfes_size_t key_length) {
+jfes_object_map_t *jfes_get_mapped_child(const jfes_value_t *value, const char *key, jfes_size_t key_length) {
     if (!value || !key || value->type != jfes_type_object) {
         return JFES_NULL;
     }
@@ -1467,7 +1467,7 @@ jfes_object_map_t *jfes_get_mapped_child(jfes_value_t *value, const char *key, j
     return JFES_NULL;
 }
 
-jfes_status_t jfes_place_to_array(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item) {
+jfes_status_t jfes_place_to_array(const jfes_config_t *config, const jfes_value_t *value, jfes_value_t *item) {
     if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
@@ -1475,7 +1475,7 @@ jfes_status_t jfes_place_to_array(const jfes_config_t *config, jfes_value_t *val
     return jfes_place_to_array_at(config, value, item, value->data.array_val->count);
 }
 
-jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
+jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, const jfes_value_t *value, jfes_value_t *item, jfes_size_t place_at) {
     if (!jfes_check_configuration(config) || !value || !item || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
@@ -1506,7 +1506,7 @@ jfes_status_t jfes_place_to_array_at(const jfes_config_t *config, jfes_value_t *
     return jfes_success;
 }
 
-jfes_status_t jfes_remove_from_array(const jfes_config_t *config, jfes_value_t *value, jfes_size_t index) {
+jfes_status_t jfes_remove_from_array(const jfes_config_t *config, const jfes_value_t *value, jfes_size_t index) {
     if (!jfes_check_configuration(config) || !value || value->type != jfes_type_array) {
         return jfes_invalid_arguments;
     }
@@ -1527,7 +1527,7 @@ jfes_status_t jfes_remove_from_array(const jfes_config_t *config, jfes_value_t *
     return jfes_success;
 }
 
-jfes_status_t jfes_set_object_property(const jfes_config_t *config, jfes_value_t *value,
+jfes_status_t jfes_set_object_property(const jfes_config_t *config, const jfes_value_t *value,
         jfes_value_t *item, const char *key, jfes_size_t key_length) {
     if (!jfes_check_configuration(config) || !value || !item || !key || value->type != jfes_type_object) {
         return jfes_invalid_arguments;
@@ -1575,7 +1575,7 @@ jfes_status_t jfes_set_object_property(const jfes_config_t *config, jfes_value_t
     return jfes_success;
 }
 
-jfes_status_t jfes_remove_object_property(const jfes_config_t *config, jfes_value_t *value,
+jfes_status_t jfes_remove_object_property(const jfes_config_t *config, const jfes_value_t *value,
         const char *key, jfes_size_t key_length) {
     if (!jfes_check_configuration(config) || !value || value->type != jfes_type_object || !key) {
         return jfes_invalid_arguments;
