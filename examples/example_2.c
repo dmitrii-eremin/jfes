@@ -21,7 +21,7 @@ int example_2_entry(int argc, char **argv) {
     }
 
     jfes_config_t config;
-    config.jfes_malloc = malloc;
+    config.jfes_malloc = (jfes_malloc_t)malloc;
     config.jfes_free = free;
 
     jfes_value_t value;
