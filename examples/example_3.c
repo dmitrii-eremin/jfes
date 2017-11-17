@@ -21,7 +21,7 @@ int example_3_entry(int argc, char **argv) {
     }
 
     jfes_config_t config;
-    config.jfes_malloc = malloc;
+    config.jfes_malloc = (jfes_malloc_t)malloc;
     config.jfes_free = free;
 
     jfes_value_t value;
@@ -46,7 +46,7 @@ int example_3_entry(int argc, char **argv) {
             jfes_set_object_property(&config, child, jfes_create_integer_value(&config, 2), "age", 0);
 
             jfes_remove_object_property(&config, child, "middle_name", 0);
-            
+
             /* Place value `child` in `children` json array at index 1. */
             status = jfes_place_to_array_at(&config, children, child, 1);
 
@@ -64,7 +64,7 @@ int example_3_entry(int argc, char **argv) {
             dump_size = 1024;
             jfes_value_to_string(&value, &ugly_dump[0], &dump_size, 0);
             ugly_dump[dump_size] = '\0';
-            
+
             set_file_content("~tmp_example_3.ugly.out.json", ugly_dump, dump_size);
         }
 

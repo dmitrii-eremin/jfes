@@ -13,7 +13,6 @@
 
 /** Example 1 entry point. */
 int example_1_entry(int argc, char **argv) {
-    
     unsigned long buffer_size = 2048;
     char *json_data = malloc(buffer_size * sizeof(char));
 
@@ -26,7 +25,7 @@ int example_1_entry(int argc, char **argv) {
     jfes_size_t tokens_count = 1024;
 
     jfes_config_t config;
-    config.jfes_malloc = malloc;
+    config.jfes_malloc = (jfes_malloc_t)malloc;
     config.jfes_free = free;
 
     jfes_init_parser(&parser, &config);
