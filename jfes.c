@@ -352,7 +352,7 @@ static int jfes_string_to_boolean(const char *data, jfes_size_t length) {
 
     \return         Integer type.
 */
-jfes_integer_type_t jfes_get_integer_type(const char *data, jfes_size_t length) {
+static jfes_integer_type_t jfes_get_integer_type(const char *data, jfes_size_t length) {
     if (!data) {
         return jfes_not_integer;
     }
@@ -530,7 +530,7 @@ static double jfes_string_to_double(const char *data, jfes_size_t length) {
 
     \return         String representation of the given value.
 */
-char *jfes_boolean_to_string(int value) {
+static const char *jfes_boolean_to_string(int value) {
     return value ? JFES_TRUE_VALUE : JFES_FALSE_VALUE;
 }
 
@@ -546,7 +546,7 @@ char *jfes_boolean_to_string(int value) {
     \warning        output_size must be greater than 1, because the output will be
     null-terminated (if `output_size == 1`, then this single byte will be '\0').
 */
-char *jfes_integer_to_string_r(int value, char *output, jfes_size_t output_size) {
+static char *jfes_integer_to_string_r(int value, char *output, jfes_size_t output_size) {
     if (!output || output_size <= 1) {
         return JFES_NULL;
     }
@@ -592,7 +592,7 @@ char *jfes_integer_to_string_r(int value, char *output, jfes_size_t output_size)
 
     \return         String representation of the given value.
 */
-char *jfes_integer_to_string(int value) {
+static char *jfes_integer_to_string(int value) {
     static char buf[JFES_MAX_DIGITS + 1];
     return jfes_integer_to_string_r(value, &buf[0], JFES_MAX_DIGITS);
 }
@@ -610,7 +610,7 @@ char *jfes_integer_to_string(int value) {
     \warning        output_size must be greater than 1, because the output will be
     null-terminated (if `output_size == 1`, then this single byte will be '\0').
 */
-char *jfes_double_to_string_r(double value, char *output, jfes_size_t output_size, double precision_eps) {
+static char *jfes_double_to_string_r(double value, char *output, jfes_size_t output_size, double precision_eps) {
     if (!output || output_size <= 1) {
         return JFES_NULL;
     }
@@ -657,7 +657,7 @@ char *jfes_double_to_string_r(double value, char *output, jfes_size_t output_siz
 
     \return         String representation of the given value.
 */
-char *jfes_double_to_string(double value) {
+static char *jfes_double_to_string(double value) {
     static char buf[JFES_MAX_DIGITS];
 
     static double precision_eps = JFES_DOUBLE_PRECISION;
@@ -673,7 +673,7 @@ char *jfes_double_to_string(double value) {
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_initialize_stringstream(jfes_stringstream_t *stream, char *data, jfes_size_t max_size) {
+static jfes_status_t jfes_initialize_stringstream(jfes_stringstream_t *stream, char *data, jfes_size_t max_size) {
     if (!stream || !data || max_size == 0) {
         return jfes_invalid_arguments;
     }
@@ -695,7 +695,7 @@ jfes_status_t jfes_initialize_stringstream(jfes_stringstream_t *stream, char *da
     
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_add_to_stringstream(jfes_stringstream_t *stream, char *data, jfes_size_t data_length) {
+static jfes_status_t jfes_add_to_stringstream(jfes_stringstream_t *stream, const char *data, jfes_size_t data_length) {
     if (!stream || !data) {
         return jfes_invalid_arguments;
     }
@@ -1086,7 +1086,7 @@ jfes_status_t jfes_parse_tokens(jfes_parser_t *parser, const char *json,
 
     \return         jfes_success if everything is OK.
 */
-jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *value) {
+static jfes_status_t jfes_create_node(jfes_tokens_data_t *tokens_data, jfes_value_t *value) {
     if (!tokens_data || !value) {
         return jfes_invalid_arguments;
     }
