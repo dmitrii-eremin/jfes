@@ -2,7 +2,7 @@
 #                                                                                 #
 # NAME: meson.build                                                               #
 #                                                                                 #
-# AUTHOR: Micah N Gorrell.                                                        #
+# AUTHOR: Eremin Dmitry.                                                          #
 # WRITTEN BY: Michael Brockus.                                                    #
 #                                                                                 #
 # License: MIT                                                                    #
